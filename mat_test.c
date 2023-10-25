@@ -186,7 +186,7 @@ void alloc_success_test(void) {
     CU_ASSERT_NOT_EQUAL(mat->data, NULL);
     CU_ASSERT_EQUAL(mat->is_1d, 1);
     for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 2; j++) {
+        for (int j = 0; j < 1; j++) {
             CU_ASSERT_EQUAL(get(mat, i, j), 0);
         }
     }
