@@ -87,7 +87,7 @@ int allocate_matrix(matrix **mat, int rows, int cols) {
     }
 
     (*mat)->is_1d = rows == 1 || cols == 1;
-    (*mat)->ref_cnt = 0;
+    (*mat)->ref_cnt = 1;
     (*mat)->parent = NULL;
     return 0;
 }
@@ -121,7 +121,7 @@ int allocate_matrix_ref(matrix **mat, matrix *from, int row_offset, int col_offs
 
     (*mat)->is_1d = rows == 1 || cols == 1;
     from->ref_cnt ++;
-    (*mat)->ref_cnt = 0;
+    (*mat)->ref_cnt = 1;
     (*mat)->parent = from;
 
     return 0;
@@ -135,7 +135,7 @@ int allocate_matrix_ref(matrix **mat, matrix *from, int row_offset, int col_offs
  * See the spec for more information.
  */
 void deallocate_matrix(matrix *mat) {
-    if (mat->ref_cnt != 0) {
+    if (mat == NULL || mat->ref_cnt != 0) {
         return;
     }
     for (int i = 0; i < mat->rows; ++i) {
@@ -222,13 +222,17 @@ int mul_matrix(matrix *result, matrix *mat1, matrix *mat2) {
     if (result->rows != mat1->rows || result->cols != mat2->cols) {
         return -2;
     }
+    matrix *temp_result = NULL;
+    allocate_matrix(&temp_result, result->rows, result->cols);
     for (int i = 0; i < result->rows; ++i) {
         for (int k = 0; k < mat1->cols; ++k) {
             for (int j = 0; j < result->cols; ++j) {
-                result->data[i][j] += mat1->data[i][k] * mat2->data[k][j];
+                temp_result->data[i][j] += mat1->data[i][k] * mat2->data[k][j];
             }
         }
     }
+    result->data = temp_result->data;
+    free(temp_result);
     return 0;
 }
 
@@ -241,21 +245,13 @@ int pow_matrix(matrix *result, matrix *mat, int pow) {
     if (pow < 0) {
         return -2;
     }
-    if (pow == 0) {
-        for (int i = 0; i < result->rows; ++i) {
-            for (int j = 0; j < result->cols; ++j) {
-                result->data[i][j] = i == j;
-            }
-        }
-        return 0;
-    }
-    for (int i = 0; i < mat->rows; ++i) {
-        for (int j = 0; j < mat->cols; ++j) {
-            result->data[i][j] = mat->data[i][j];
+    for (int i = 0; i < result->rows; ++i) {
+        for (int j = 0; j < result->cols; ++j) {
+            result->data[i][j] = i == j;
         }
     }
-    for (int i = 1; i < pow; ++i) {
-        mul_matrix(result, mat, result);
+    for (int i = 0; i < pow; ++i) {
+        mul_matrix(result, result, mat);
     }
     return 0;
 }
@@ -287,7 +283,7 @@ int abs_matrix(matrix *result, matrix *mat) {
     for (int i = 0; i < result->rows; ++i) {
         for (int j = 0; j < result->cols; ++j) {
             double temp;
-            result->data[i][j] = (temp = mat->data[i][j] < 0) ? -temp : temp;
+            result->data[i][j] = ((temp = mat->data[i][j]) < 0) ? -temp : temp;
         }
     }
     return 0;
