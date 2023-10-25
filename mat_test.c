@@ -159,6 +159,8 @@ void alloc_fail_test(void) {
     CU_ASSERT_EQUAL(allocate_matrix(&mat, 0, 0), -1);
     CU_ASSERT_EQUAL(allocate_matrix(&mat, 0, 1), -1);
     CU_ASSERT_EQUAL(allocate_matrix(&mat, 1, 0), -1);
+    CU_ASSERT_EQUAL(allocate_matrix(&mat, -1, 1), -1);
+    CU_ASSERT_EQUAL(allocate_matrix(&mat, 1, -1), -1);
 }
 
 void alloc_success_test(void) {
@@ -169,6 +171,7 @@ void alloc_success_test(void) {
     CU_ASSERT_EQUAL(mat->rows, 3);
     CU_ASSERT_EQUAL(mat->cols, 2);
     CU_ASSERT_NOT_EQUAL(mat->data, NULL);
+    CU_ASSERT_EQUAL(mat->is_1d, 0);
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 2; j++) {
             CU_ASSERT_EQUAL(get(mat, i, j), 0);
