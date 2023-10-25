@@ -16,6 +16,12 @@ void add_test(void) {
     CU_ASSERT_EQUAL(allocate_matrix(&result, 2, 2), 0);
     CU_ASSERT_EQUAL(allocate_matrix(&mat1, 2, 2), 0);
     CU_ASSERT_EQUAL(allocate_matrix(&mat2, 2, 2), 0);
+
+    matrix *mat3 = NULL;
+    matrix *fail_result = NULL;
+    CU_ASSERT_EQUAL(allocate_matrix(&mat3, 2, 1), 0);
+    CU_ASSERT_EQUAL(allocate_matrix(&fail_result, 2, 1), 0);
+
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
             set(mat1, i, j, i * 2 + j);
@@ -28,9 +34,14 @@ void add_test(void) {
             CU_ASSERT_EQUAL(get(result, i, j), 2 * (i * 2 + j));
         }
     }
+
+    CU_ASSERT_EQUAL(add_matrix(result, mat1, mat3), -2);
+    CU_ASSERT_EQUAL(add_matrix(fail_result, mat1, mat2), -2);
     deallocate_matrix(result);
     deallocate_matrix(mat1);
     deallocate_matrix(mat2);
+    deallocate_matrix(mat3);
+    deallocate_matrix(fail_result);
 }
 
 void sub_test(void) {
@@ -40,6 +51,12 @@ void sub_test(void) {
     CU_ASSERT_EQUAL(allocate_matrix(&result, 2, 2), 0);
     CU_ASSERT_EQUAL(allocate_matrix(&mat1, 2, 2), 0);
     CU_ASSERT_EQUAL(allocate_matrix(&mat2, 2, 2), 0);
+
+    matrix *mat3 = NULL;
+    matrix *fail_result = NULL;
+    CU_ASSERT_EQUAL(allocate_matrix(&mat3, 2, 1), 0);
+    CU_ASSERT_EQUAL(allocate_matrix(&fail_result, 2, 1), 0);
+
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
             set(mat1, i, j, i * 2 + j);
@@ -52,9 +69,15 @@ void sub_test(void) {
             CU_ASSERT_EQUAL(get(result, i, j), (-2) * (i * 2 + j));
         }
     }
+
+    CU_ASSERT_EQUAL(add_matrix(result, mat1, mat3), -2);
+    CU_ASSERT_EQUAL(add_matrix(fail_result, mat1, mat2), -2);
+
     deallocate_matrix(result);
     deallocate_matrix(mat1);
     deallocate_matrix(mat2);
+    deallocate_matrix(mat3);
+    deallocate_matrix(fail_result);
 }
 
 void mul_test(void) {
@@ -314,6 +337,7 @@ int main(void) {
     /* add the tests to the suite */
     if ((CU_add_test(pSuite, "add_test", add_test) == NULL) ||
             (CU_add_test(pSuite, "sub_test", sub_test) == NULL) ||
+            (CU_add_test(pSuite, "fill_test", fill_test) == NULL) ||
             (CU_add_test(pSuite, "mul_test", mul_test) == NULL) ||
             (CU_add_test(pSuite, "neg_test", neg_test) == NULL) ||
             (CU_add_test(pSuite, "abs_test", abs_test) == NULL) ||
