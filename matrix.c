@@ -118,7 +118,7 @@ int allocate_matrix_ref(matrix **mat, matrix *from, int row_offset, int col_offs
     (*mat)->data = from->data + row_offset;
 
     for (int i = 0; i < rows; ++i) {
-        (*mat)->data[i] = from->data[i] + col_offset;
+        (*mat)->data[i] = from->data[i+row_offset] + col_offset;
     }
 
     (*mat)->is_1d = rows == 1 || cols == 1;
@@ -137,12 +137,21 @@ int allocate_matrix_ref(matrix **mat, matrix *from, int row_offset, int col_offs
  * See the spec for more information.
  */
 void deallocate_matrix(matrix *mat) {
-    if (mat == NULL || mat->ref_cnt != 0) {
+    if (mat == NULL) {
         return;
     }
-    free(*(mat->data));
-    free(mat->data);
-    free(mat);
+    mat->ref_cnt --;
+    if (mat->ref_cnt != 0) {
+        return;
+    }
+    if (mat->parent == NULL) {
+        free(*(mat->data));
+        free(mat->data);
+        free(mat);
+    } else {
+        deallocate_matrix(mat->parent);
+        free(mat);
+    }
 }
 
 /*

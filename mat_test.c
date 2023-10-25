@@ -214,8 +214,25 @@ void alloc_ref_test(void) {
         }
     }
     /* Now we compare the data in the reference matrix */
+    for (int i = 0; i < from->rows; ++i) {
+        for (int j = 0; j < from->cols; ++j) {
+            CU_ASSERT_EQUAL(from->data[i][j], i * 2 + j);
+        }
+    }
     deallocate_matrix(from);
+    CU_ASSERT_EQUAL(from->ref_cnt, 2);
+    for (int i = 0; i < from->rows; ++i) {
+        for (int j = 0; j < from->cols; ++j) {
+            CU_ASSERT_EQUAL(from->data[i][j], i * 2 + j);
+        }
+    }
     deallocate_matrix(mat1);
+    CU_ASSERT_EQUAL(from->ref_cnt, 1);
+    for (int i = 0; i < from->rows; ++i) {
+        for (int j = 0; j < from->cols; ++j) {
+            CU_ASSERT_EQUAL(from->data[i][j], i * 2 + j);
+        }
+    }
     deallocate_matrix(mat2);
 }
 
