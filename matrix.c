@@ -78,12 +78,14 @@ int allocate_matrix(matrix **mat, int rows, int cols) {
         return -1;
     }
 
+    double *data_array = (double *) calloc(cols * rows, sizeof(double));
+    if (data_array == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "Allocate matrix failed");
+        return -1;
+    }
+
     for (int i = 0; i < rows; ++i) {
-        (*mat)->data[i] = (double *) calloc(cols, sizeof(double));
-        if ((*mat)->data[i] == NULL) {
-            PyErr_SetString(PyExc_RuntimeError, "Allocate matrix failed");
-            return -1;
-        }
+        (*mat)->data[i] = data_array + i * cols;
     }
 
     (*mat)->is_1d = rows == 1 || cols == 1;
@@ -138,9 +140,7 @@ void deallocate_matrix(matrix *mat) {
     if (mat == NULL || mat->ref_cnt != 0) {
         return;
     }
-    for (int i = 0; i < mat->rows; ++i) {
-        free(mat->data[i]);
-    }
+    free(*(mat->data));
     free(mat->data);
     free(mat);
 }
