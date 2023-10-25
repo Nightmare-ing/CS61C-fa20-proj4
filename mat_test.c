@@ -178,6 +178,18 @@ void alloc_success_test(void) {
         }
     }
     deallocate_matrix(mat);
+    CU_ASSERT_EQUAL(allocate_matrix(&mat, 3, 1), 0);
+    CU_ASSERT_EQUAL(mat->parent, NULL);
+    CU_ASSERT_EQUAL(mat->ref_cnt, 1);
+    CU_ASSERT_EQUAL(mat->rows, 3);
+    CU_ASSERT_EQUAL(mat->cols, 1);
+    CU_ASSERT_NOT_EQUAL(mat->data, NULL);
+    CU_ASSERT_EQUAL(mat->is_1d, 1);
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 2; j++) {
+            CU_ASSERT_EQUAL(get(mat, i, j), 0);
+        }
+    }
 }
 
 void alloc_ref_test(void) {
@@ -214,8 +226,25 @@ void alloc_ref_test(void) {
         }
     }
     /* Now we compare the data in the reference matrix */
+    for (int i = 0; i < from->rows; ++i) {
+        for (int j = 0; j < from->cols; ++j) {
+            CU_ASSERT_EQUAL(from->data[i][j], i * 2 + j);
+        }
+    }
     deallocate_matrix(from);
+    CU_ASSERT_EQUAL(from->ref_cnt, 2);
+    for (int i = 0; i < from->rows; ++i) {
+        for (int j = 0; j < from->cols; ++j) {
+            CU_ASSERT_EQUAL(from->data[i][j], i * 2 + j);
+        }
+    }
     deallocate_matrix(mat1);
+    CU_ASSERT_EQUAL(from->ref_cnt, 1);
+    for (int i = 0; i < from->rows; ++i) {
+        for (int j = 0; j < from->cols; ++j) {
+            CU_ASSERT_EQUAL(from->data[i][j], i * 2 + j);
+        }
+    }
     deallocate_matrix(mat2);
 }
 
@@ -255,6 +284,16 @@ void set_test(void) {
     deallocate_matrix(mat);
 }
 
+void fill_test(void) {
+    matrix *mat = NULL;
+    allocate_matrix(&mat, 3, 2);
+    fill_matrix(mat, 1);
+    for (int i = 0; i < mat->rows; ++i) {
+        for (int j = 0; j < mat->cols; ++j) {
+            CU_ASSERT_EQUAL(get(mat, i, j), 1);
+        }
+    }
+}
 /************* Test Runner Code goes here **************/
 
 int main(void) {
