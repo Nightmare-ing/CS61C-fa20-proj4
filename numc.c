@@ -286,7 +286,21 @@ PyObject *Matrix61c_repr(PyObject *self) {
  * self, and the second operand can be obtained by casting `args`.
  */
 PyObject *Matrix61c_add(Matrix61c* self, PyObject* args) {
-    /* TODO: YOUR CODE HERE */
+    PyObject *mat = NULL;
+    if (!PyArg_UnpackTuple(args, "args", 1, 1, &mat)) {
+        PyErr_SetString(PyExc_TypeError, "Invalid arguments");
+        return NULL;
+    }
+    if (!PyObject_TypeCheck(mat, &Matrix61cType)) {
+        PyErr_SetString(PyExc_TypeError, "Argument must of type numc.Matrix!");
+        return NULL;
+    }
+    Matrix61c *mat61c = (Matrix61c *) mat;
+    int error_code = add_matrix(self->mat, self->mat, mat61c->mat);
+    if (error_code == -2) {
+        PyErr_SetString(PyExc_ValueError, "Matrices have different dimensions");
+    }
+    return (PyObject *) self;
 }
 
 /*
@@ -294,7 +308,21 @@ PyObject *Matrix61c_add(Matrix61c* self, PyObject* args) {
  * self, and the second operand can be obtained by casting `args`.
  */
 PyObject *Matrix61c_sub(Matrix61c* self, PyObject* args) {
-    /* TODO: YOUR CODE HERE */
+    PyObject *mat = NULL;
+    if (!PyArg_UnpackTuple(args, "args", 1, 1, &mat)) {
+        PyErr_SetString(PyExc_TypeError, "Invalid arguments");
+        return NULL;
+    }
+    if (!PyObject_TypeCheck(mat, &Matrix61cType)) {
+        PyErr_SetString(PyExc_TypeError, "Argument must of type numc.Matrix!");
+        return NULL;
+    }
+    Matrix61c *mat61c = (Matrix61c *) mat;
+    int error_code = sub_matrix(self->mat, self->mat, mat61c->mat);
+    if (error_code == -2) {
+        PyErr_SetString(PyExc_ValueError, "Matrices have different dimensions!");
+    }
+    return (PyObject *) self;
 }
 
 /*
@@ -302,7 +330,33 @@ PyObject *Matrix61c_sub(Matrix61c* self, PyObject* args) {
  * can be obtained by casting `args`.
  */
 PyObject *Matrix61c_multiply(Matrix61c* self, PyObject *args) {
-    /* TODO: YOUR CODE HERE */
+    PyObject *mat = NULL;
+    if (!PyArg_UnpackTuple(args, "args", 1, 1, &mat)) {
+        PyErr_SetString(PyExc_TypeError, "Invalid arguments");
+        return NULL;
+    }
+    if (!PyObject_TypeCheck(mat, &Matrix61cType)) {
+        PyErr_SetString(PyExc_TypeError, "Argument must of type numc.Matrix!");
+        return NULL;
+    }
+    Matrix61c *mat61c = (Matrix61c *) mat;
+
+    matrix *result_mat = NULL;
+    int alloc_failed = allocate_matrix(&result_mat, self->mat->rows, self->mat->cols);
+    if (alloc_failed) {
+        return NULL;
+    }
+
+    int error_code = mul_matrix(result_mat, self->mat, mat61c->mat);
+    if (error_code == -2) {
+        PyErr_SetString(PyExc_RuntimeError, "Multiplication failed");
+        return NULL;
+    }
+
+    Matrix61c *result = (Matrix61c *)Matrix61cType.tp_new(NULL, NULL);
+    result->mat = result_mat;
+    result->shape = get_shape(result_mat->rows, result_mat->cols);
+    return (PyObject *)result;
 }
 
 /*
