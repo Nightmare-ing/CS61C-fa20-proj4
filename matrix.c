@@ -251,7 +251,8 @@ int mul_matrix(matrix *result, matrix *mat1, matrix *mat2) {
  * Remember that pow is defined with matrix multiplication, not element-wise multiplication.
  */
 int pow_matrix(matrix *result, matrix *mat, int pow) {
-    if (pow < 0) {
+    if (mat->rows != mat->cols || mat->rows != result->rows ||
+        mat->cols != result->cols || pow < 0) {
         return -2;
     }
     for (int i = 0; i < result->rows; ++i) {
@@ -259,8 +260,11 @@ int pow_matrix(matrix *result, matrix *mat, int pow) {
             result->data[i][j] = i == j;
         }
     }
+    int error_code = 0;
     for (int i = 0; i < pow; ++i) {
-        mul_matrix(result, result, mat);
+        if ((error_code = mul_matrix(result, result, mat)) != 0) {
+            return error_code;
+        }
     }
     return 0;
 }

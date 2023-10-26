@@ -87,6 +87,12 @@ void mul_test(void) {
     CU_ASSERT_EQUAL(allocate_matrix(&result, 3, 3), 0);
     CU_ASSERT_EQUAL(allocate_matrix(&mat1, 3, 3), 0);
     CU_ASSERT_EQUAL(allocate_matrix(&mat2, 3, 3), 0);
+
+    matrix *mat3 = NULL;
+    matrix *fail_result = NULL;
+    CU_ASSERT_EQUAL(allocate_matrix(&mat3, 2, 3), 0);
+    CU_ASSERT_EQUAL(allocate_matrix(&fail_result, 2, 3), 0);
+
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             set(mat1, i, j, i * 3 + j + 1);
@@ -103,9 +109,15 @@ void mul_test(void) {
     CU_ASSERT_EQUAL(get(result, 2, 0), 102);
     CU_ASSERT_EQUAL(get(result, 2, 1), 126);
     CU_ASSERT_EQUAL(get(result, 2, 2), 150);
+
+    CU_ASSERT_EQUAL(mul_matrix(result, mat1, mat3), -2);
+    CU_ASSERT_EQUAL(mul_matrix(fail_result, mat1, mat2), -2);
+
     deallocate_matrix(result);
     deallocate_matrix(mat1);
     deallocate_matrix(mat2);
+    deallocate_matrix(mat3);
+    deallocate_matrix(fail_result);
 }
 
 void neg_test(void) {
@@ -133,6 +145,10 @@ void abs_test(void) {
     matrix *mat = NULL;
     CU_ASSERT_EQUAL(allocate_matrix(&result, 2, 2), 0);
     CU_ASSERT_EQUAL(allocate_matrix(&mat, 2, 2), 0);
+
+    matrix *fail_result = NULL;
+    CU_ASSERT_EQUAL(allocate_matrix(&fail_result, 1, 2), 0);
+
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
             if (j % 2 == 0)
@@ -147,18 +163,25 @@ void abs_test(void) {
             CU_ASSERT_EQUAL(get(result, i, j), i * 2 + j);
         }
     }
+
+    CU_ASSERT_EQUAL(abs_matrix(fail_result, mat), -2);
+
     deallocate_matrix(result);
     deallocate_matrix(mat);
+    deallocate_matrix(fail_result);
 }
 
 void pow_test(void) {
     matrix *result = NULL;
     matrix *mat = NULL;
-    CU_ASSERT_EQUAL(allocate_matrix(&result, 2, 2
-
-                                   ),
-                    0);
+    CU_ASSERT_EQUAL(allocate_matrix(&result, 2, 2), 0);
     CU_ASSERT_EQUAL(allocate_matrix(&mat, 2, 2), 0);
+
+    matrix *fail_mat = NULL;
+    matrix *fail_result = NULL;
+    CU_ASSERT_EQUAL(allocate_matrix(&fail_mat, 1, 2), 0);
+    CU_ASSERT_EQUAL(allocate_matrix(&fail_result, 1, 2), 0);
+
     set(mat, 0, 0, 1);
     set(mat, 0, 1, 1);
     set(mat, 1, 0, 1);
@@ -173,8 +196,24 @@ void pow_test(void) {
     CU_ASSERT_EQUAL(get(result, 0, 1), 55);
     CU_ASSERT_EQUAL(get(result, 1, 0), 55);
     CU_ASSERT_EQUAL(get(result, 1, 1), 34);
+    pow_matrix(result, mat, 1);
+    CU_ASSERT_EQUAL(get(result, 0, 0), 1);
+    CU_ASSERT_EQUAL(get(result, 0, 1), 1);
+    CU_ASSERT_EQUAL(get(result, 1, 0), 1);
+    CU_ASSERT_EQUAL(get(result, 1, 1), 0);
+    pow_matrix(result, mat, 0);
+    CU_ASSERT_EQUAL(get(result, 0, 0), 1);
+    CU_ASSERT_EQUAL(get(result, 0, 1), 0);
+    CU_ASSERT_EQUAL(get(result, 1, 0), 0);
+    CU_ASSERT_EQUAL(get(result, 1, 1), 1);
+
+    CU_ASSERT_EQUAL(pow_matrix(result, fail_mat, 3), -2);
+    CU_ASSERT_EQUAL(pow_matrix(fail_result, mat, 3), -2);
+
     deallocate_matrix(result);
     deallocate_matrix(mat);
+    deallocate_matrix(fail_mat);
+    deallocate_matrix(fail_result);
 }
 
 void alloc_fail_test(void) {
