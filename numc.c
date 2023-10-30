@@ -392,7 +392,11 @@ PyObject *Matrix61c_neg(Matrix61c* self) {
         return NULL;
     }
 
-    neg_matrix(result_mat, self->mat);
+    int error_code = neg_matrix(result_mat, self->mat);
+    if (error_code == -2) {
+        PyErr_SetString(PyExc_RuntimeError, "Internal error, doing negation failed");
+        return NULL;
+    }
     result->mat = result_mat;
     result->shape = self->shape;
     return (PyObject *) result;
@@ -409,7 +413,11 @@ PyObject *Matrix61c_abs(Matrix61c *self) {
         return NULL;
     }
 
-    abs_matrix(result_mat, self->mat);
+    int error_code = abs_matrix(result_mat, self->mat);
+    if (error_code == -2) {
+        PyErr_SetString(PyExc_RuntimeError, "Internal error, doing abs failed");
+        return NULL;
+    }
     result->mat = result_mat;
     result->shape = self->shape;
     return (PyObject *) result;
