@@ -301,12 +301,15 @@ PyObject *Matrix61c_add(Matrix61c* self, PyObject* args) {
     matrix *result_mat = NULL;
     int alloc_failed = allocate_matrix(&result_mat, self->mat->rows, self->mat->cols);
     if (alloc_failed) {
+        PyErr_SetString(PyExc_RuntimeError, "Alloc failed");
         return NULL;
     }
 
     int error_code = add_matrix(result_mat, self->mat, mat61c->mat);
     if (error_code == -2) {
+        free(result_mat);
         PyErr_SetString(PyExc_ValueError, "Matrices have different dimensions");
+        return NULL;
     }
 
     result->mat = result_mat;
@@ -334,12 +337,15 @@ PyObject *Matrix61c_sub(Matrix61c* self, PyObject* args) {
     matrix *result_mat = NULL;
     int alloc_failed = allocate_matrix(&result_mat, self->mat->rows, self->mat->cols);
     if (alloc_failed) {
+        PyErr_SetString(PyExc_RuntimeError, "Alloc failed");
         return NULL;
     }
 
     int error_code = sub_matrix(result_mat, self->mat, mat61c->mat);
     if (error_code == -2) {
+        free(result_mat);
         PyErr_SetString(PyExc_ValueError, "Matrices have different dimensions!");
+        return NULL;
     }
 
     result->mat = result_mat;
@@ -367,11 +373,13 @@ PyObject *Matrix61c_multiply(Matrix61c* self, PyObject *args) {
     matrix *result_mat = NULL;
     int alloc_failed = allocate_matrix(&result_mat, self->mat->rows, self->mat->cols);
     if (alloc_failed) {
+        PyErr_SetString(PyExc_RuntimeError, "Alloc failed");
         return NULL;
     }
 
     int error_code = mul_matrix(result_mat, self->mat, mat61c->mat);
     if (error_code == -2) {
+        free(result_mat);
         PyErr_SetString(PyExc_RuntimeError, "Multiplication failed");
         return NULL;
     }
@@ -389,11 +397,13 @@ PyObject *Matrix61c_neg(Matrix61c* self) {
     matrix *result_mat = NULL;
     int alloc_failed = allocate_matrix(&result_mat, self->mat->rows, self->mat->cols);
     if (alloc_failed) {
+        PyErr_SetString(PyExc_RuntimeError, "Alloc failed");
         return NULL;
     }
 
     int error_code = neg_matrix(result_mat, self->mat);
     if (error_code == -2) {
+        free(result_mat);
         PyErr_SetString(PyExc_RuntimeError, "Internal error, doing negation failed");
         return NULL;
     }
@@ -410,11 +420,13 @@ PyObject *Matrix61c_abs(Matrix61c *self) {
     matrix *result_mat = NULL;
     int alloc_failed = allocate_matrix(&result_mat, self->mat->rows, self->mat->cols);
     if (alloc_failed) {
+        PyErr_SetString(PyExc_RuntimeError, "Alloc failed");
         return NULL;
     }
 
     int error_code = abs_matrix(result_mat, self->mat);
     if (error_code == -2) {
+        free(result_mat);
         PyErr_SetString(PyExc_RuntimeError, "Internal error, doing abs failed");
         return NULL;
     }
@@ -429,6 +441,7 @@ PyObject *Matrix61c_abs(Matrix61c *self) {
 PyObject *Matrix61c_pow(Matrix61c *self, PyObject *pow, PyObject *optional) {
     if (!PyLong_Check(pow)) {
         PyErr_SetString(PyExc_TypeError, "Invalid value for argument pow");
+        return NULL;
     }
     int pow_num = (int) PyLong_AsLong(pow);
 
@@ -436,12 +449,15 @@ PyObject *Matrix61c_pow(Matrix61c *self, PyObject *pow, PyObject *optional) {
     matrix *mat = NULL;
     int alloc_failed = allocate_matrix(&mat, self->mat->rows, self->mat->cols);
     if (alloc_failed) {
+        PyErr_SetString(PyExc_RuntimeError, "Internal error, doing abs failed");
         return NULL;
     }
 
     int error_code = pow_matrix(mat, self->mat, pow_num);
     if (error_code == -2) {
+        free(mat);
         PyErr_SetString(PyExc_ValueError, "pow is negative or the matrix is not a square matrix");
+        return NULL;
     }
 
     result->mat = mat;
