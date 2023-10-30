@@ -419,7 +419,26 @@ PyObject *Matrix61c_abs(Matrix61c *self) {
  * Raise numc.Matrix (Matrix61c) to the `pow`th power. You can ignore the argument `optional`.
  */
 PyObject *Matrix61c_pow(Matrix61c *self, PyObject *pow, PyObject *optional) {
-    /* TODO: YOUR CODE HERE */
+    if (!PyLong_Check(pow)) {
+        PyErr_SetString(PyExc_TypeError, "Invalid value for argument pow");
+    }
+    int pow_num = (int) PyLong_AsLong(pow);
+
+    Matrix61c *result = (Matrix61c *) Matrix61c_new(&Matrix61cType, NULL, NULL);
+    matrix *mat = NULL;
+    int alloc_failed = allocate_matrix(&mat, self->mat->rows, self->mat->cols);
+    if (alloc_failed) {
+        return NULL;
+    }
+
+    int error_code = pow_matrix(mat, self->mat, pow_num);
+    if (error_code == -2) {
+        PyErr_SetString(PyExc_ValueError, "pow is negative or the matrix is not a square matrix");
+    }
+
+    result->mat = mat;
+    result->shape = self->shape;
+    return (PyObject *) result;
 }
 
 /*
