@@ -306,9 +306,13 @@ PyObject *Matrix61c_add(Matrix61c* self, PyObject* args) {
     }
 
     int error_code = add_matrix(result_mat, self->mat, mat61c->mat);
-    if (error_code == -2) {
+    if (error_code != 0) {
         free(result_mat);
-        PyErr_SetString(PyExc_ValueError, "Matrices have different dimensions");
+        if (error_code == -2) {
+            PyErr_SetString(PyExc_ValueError, "Matrices have different dimensions");
+        } else if (error_code == -3) {
+            PyErr_SetString(PyExc_RuntimeError, "Internal Error: result matrix dimension not match");
+        }
         return NULL;
     }
 
@@ -342,9 +346,13 @@ PyObject *Matrix61c_sub(Matrix61c* self, PyObject* args) {
     }
 
     int error_code = sub_matrix(result_mat, self->mat, mat61c->mat);
-    if (error_code == -2) {
+    if (error_code != 0) {
         free(result_mat);
-        PyErr_SetString(PyExc_ValueError, "Matrices have different dimensions!");
+        if (error_code == -2) {
+            PyErr_SetString(PyExc_ValueError, "Matrices have different dimensions!");
+        } else if (error_code == -3) {
+            PyErr_SetString(PyExc_RuntimeError, "Internal Error: result matrix dimension not match");
+        }
         return NULL;
     }
 
@@ -378,9 +386,13 @@ PyObject *Matrix61c_multiply(Matrix61c* self, PyObject *args) {
     }
 
     int error_code = mul_matrix(result_mat, self->mat, mat61c->mat);
-    if (error_code == -2) {
+    if (error_code != 0) {
         free(result_mat);
-        PyErr_SetString(PyExc_RuntimeError, "Multiplication failed");
+        if (error_code == -2) {
+            PyErr_SetString(PyExc_ValueError, "matrices dimension not match");
+        } else if (error_code == -3) {
+            PyErr_SetString(PyExc_RuntimeError, "Internal Error: result matrix dimension not match");
+        }
         return NULL;
     }
 
@@ -404,7 +416,7 @@ PyObject *Matrix61c_neg(Matrix61c* self) {
     int error_code = neg_matrix(result_mat, self->mat);
     if (error_code == -2) {
         free(result_mat);
-        PyErr_SetString(PyExc_RuntimeError, "Internal error, doing negation failed");
+        PyErr_SetString(PyExc_RuntimeError, "Internal error: Result matrix dimension not match");
         return NULL;
     }
     result->mat = result_mat;
@@ -427,7 +439,7 @@ PyObject *Matrix61c_abs(Matrix61c *self) {
     int error_code = abs_matrix(result_mat, self->mat);
     if (error_code == -2) {
         free(result_mat);
-        PyErr_SetString(PyExc_RuntimeError, "Internal error, doing abs failed");
+        PyErr_SetString(PyExc_RuntimeError, "Internal error: Result matrix dimension not match");
         return NULL;
     }
     result->mat = result_mat;
@@ -454,9 +466,13 @@ PyObject *Matrix61c_pow(Matrix61c *self, PyObject *pow, PyObject *optional) {
     }
 
     int error_code = pow_matrix(mat, self->mat, pow_num);
-    if (error_code == -2) {
+    if (error_code != 0) {
         free(mat);
-        PyErr_SetString(PyExc_ValueError, "pow is negative or the matrix is not a square matrix");
+        if (error_code == -2) {
+            PyErr_SetString(PyExc_ValueError, "pow is negative or the matrix is not a square matrix");
+        } else if (error_code == -3) {
+            PyErr_SetString(PyExc_RuntimeError, "Internal Error: result matrix dimension not match");
+        }
         return NULL;
     }
 

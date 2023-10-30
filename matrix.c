@@ -190,7 +190,7 @@ int add_matrix(matrix *result, matrix *mat1, matrix *mat2) {
         return -2;
     }
     if (result->rows != mat1->rows || result->cols != mat1->cols) {
-        return -2;
+        return -3;
     }
     for (int i = 0; i < result->rows; ++i) {
         for (int j = 0; j < result->cols; ++j) {
@@ -209,7 +209,7 @@ int sub_matrix(matrix *result, matrix *mat1, matrix *mat2) {
         return -2;
     }
     if (result->rows != mat1->rows || result->cols != mat1->cols) {
-        return -2;
+        return -3;
     }
     for (int i = 0; i < result->rows; ++i) {
         for (int j = 0; j < result->cols; ++j) {
@@ -229,7 +229,7 @@ int mul_matrix(matrix *result, matrix *mat1, matrix *mat2) {
         return -2;
     }
     if (result->rows != mat1->rows || result->cols != mat2->cols) {
-        return -2;
+        return -3;
     }
     matrix *temp_result = NULL;
     allocate_matrix(&temp_result, result->rows, result->cols);
@@ -251,10 +251,13 @@ int mul_matrix(matrix *result, matrix *mat1, matrix *mat2) {
  * Remember that pow is defined with matrix multiplication, not element-wise multiplication.
  */
 int pow_matrix(matrix *result, matrix *mat, int pow) {
-    if (mat->rows != mat->cols || mat->rows != result->rows ||
-        mat->cols != result->cols || pow < 0) {
+    if (mat->rows != mat->cols || pow < 0) {
         return -2;
     }
+    if (mat->rows != result->rows || mat->cols != result->cols) {
+        return -3;
+    }
+
     for (int i = 0; i < result->rows; ++i) {
         for (int j = 0; j < result->cols; ++j) {
             result->data[i][j] = i == j;
