@@ -296,11 +296,22 @@ PyObject *Matrix61c_add(Matrix61c* self, PyObject* args) {
         return NULL;
     }
     Matrix61c *mat61c = (Matrix61c *) mat;
-    int error_code = add_matrix(self->mat, self->mat, mat61c->mat);
+
+    Matrix61c *result = (Matrix61c *) Matrix61c_new(&Matrix61cType, NULL, NULL);
+    matrix *result_mat = NULL;
+    int alloc_failed = allocate_matrix(&result_mat, self->mat->rows, self->mat->cols);
+    if (alloc_failed) {
+        return NULL;
+    }
+
+    int error_code = add_matrix(result_mat, self->mat, mat61c->mat);
     if (error_code == -2) {
         PyErr_SetString(PyExc_ValueError, "Matrices have different dimensions");
     }
-    return (PyObject *) self;
+
+    result->mat = result_mat;
+    result->shape = self->shape;
+    return (PyObject *) result;
 }
 
 /*
@@ -318,11 +329,22 @@ PyObject *Matrix61c_sub(Matrix61c* self, PyObject* args) {
         return NULL;
     }
     Matrix61c *mat61c = (Matrix61c *) mat;
-    int error_code = sub_matrix(self->mat, self->mat, mat61c->mat);
+
+    Matrix61c *result = (Matrix61c *) Matrix61c_new(&Matrix61cType, NULL, NULL);
+    matrix *result_mat = NULL;
+    int alloc_failed = allocate_matrix(&result_mat, self->mat->rows, self->mat->cols);
+    if (alloc_failed) {
+        return NULL;
+    }
+
+    int error_code = sub_matrix(result_mat, self->mat, mat61c->mat);
     if (error_code == -2) {
         PyErr_SetString(PyExc_ValueError, "Matrices have different dimensions!");
     }
-    return (PyObject *) self;
+
+    result->mat = result_mat;
+    result->shape = self->shape;
+    return (PyObject *) result;
 }
 
 /*
@@ -341,6 +363,7 @@ PyObject *Matrix61c_multiply(Matrix61c* self, PyObject *args) {
     }
     Matrix61c *mat61c = (Matrix61c *) mat;
 
+    Matrix61c *result = (Matrix61c *) Matrix61c_new(&Matrix61cType, NULL, NULL);
     matrix *result_mat = NULL;
     int alloc_failed = allocate_matrix(&result_mat, self->mat->rows, self->mat->cols);
     if (alloc_failed) {
@@ -353,10 +376,9 @@ PyObject *Matrix61c_multiply(Matrix61c* self, PyObject *args) {
         return NULL;
     }
 
-    Matrix61c *result = (Matrix61c *)Matrix61cType.tp_new(NULL, NULL);
     result->mat = result_mat;
     result->shape = get_shape(result_mat->rows, result_mat->cols);
-    return (PyObject *)result;
+    return (PyObject *) result;
 }
 
 /*
