@@ -385,14 +385,34 @@ PyObject *Matrix61c_multiply(Matrix61c* self, PyObject *args) {
  * Negates the given numc.Matrix.
  */
 PyObject *Matrix61c_neg(Matrix61c* self) {
-    /* TODO: YOUR CODE HERE */
+    Matrix61c *result = (Matrix61c *) Matrix61c_new(&Matrix61cType, NULL, NULL);
+    matrix *result_mat = NULL;
+    int alloc_failed = allocate_matrix(&result_mat, self->mat->rows, self->mat->cols);
+    if (alloc_failed) {
+        return NULL;
+    }
+
+    neg_matrix(result_mat, self->mat);
+    result->mat = result_mat;
+    result->shape = self->shape;
+    return (PyObject *) result;
 }
 
 /*
  * Take the element-wise absolute value of this numc.Matrix.
  */
 PyObject *Matrix61c_abs(Matrix61c *self) {
-    /* TODO: YOUR CODE HERE */
+    Matrix61c *result = (Matrix61c *) Matrix61c_new(&Matrix61cType, NULL, NULL);
+    matrix *result_mat = NULL;
+    int alloc_failed = allocate_matrix(&result_mat, self->mat->rows, self->mat->cols);
+    if (alloc_failed) {
+        return NULL;
+    }
+
+    abs_matrix(result_mat, self->mat);
+    result->mat = result_mat;
+    result->shape = self->shape;
+    return (PyObject *) result;
 }
 
 /*
