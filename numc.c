@@ -531,7 +531,25 @@ PyNumberMethods Matrix61c_as_number = {
  * Return None in Python (this is different from returning null).
  */
 PyObject *Matrix61c_set_value(Matrix61c *self, PyObject* args) {
-    PyObject
+    PyObject *row = NULL;
+    PyObject *col = NULL;
+    PyObject *val = NULL;
+    if (!PyArg_UnpackTuple(args, "args", 3, 3, &row, &col, &val) ||
+        !(row && col && val && PyLong_Check(row) && PyLong_Check(col) &&
+        (PyLong_Check(val) || PyFloat_Check(val)))) {
+        PyErr_SetString(PyExc_TypeError, "Invalid arguments");
+    }
+    int i = (int) PyLong_AsLong(row);
+    int j = (int) PyLong_AsLong(col);
+    double val_c = (double) PyFloat_AsDouble(val);
+
+    int rows = self->mat->rows;
+    int cols = self->mat->cols;
+    if (i >= rows || j >= cols) {
+        PyErr_SetString(PyExc_IndexError, "i or j or both out of bounds");
+    }
+
+    self->mat->data[i][j] = val_c;
 }
 
 /*
