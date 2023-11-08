@@ -486,7 +486,41 @@ PyObject *Matrix61c_pow(Matrix61c *self, PyObject *pow, PyObject *optional) {
  * define. You might find this link helpful: https://docs.python.org/3.6/c-api/typeobj.html
  */
 PyNumberMethods Matrix61c_as_number = {
-    /* TODO: YOUR CODE HERE */
+        (binaryfunc) Matrix61c_add,
+        (binaryfunc) Matrix61c_sub,
+        (binaryfunc) Matrix61c_multiply,
+        NULL, NULL,
+        (ternaryfunc) Matrix61c_pow,
+        (unaryfunc) Matrix61c_neg,
+        NULL,
+        (unaryfunc) Matrix61c_abs,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
 };
 
 
@@ -497,7 +531,7 @@ PyNumberMethods Matrix61c_as_number = {
  * Return None in Python (this is different from returning null).
  */
 PyObject *Matrix61c_set_value(Matrix61c *self, PyObject* args) {
-    /* TODO: YOUR CODE HERE */
+    PyObject
 }
 
 /*
