@@ -14,7 +14,7 @@ find_library(CUNIT_LIBRARY cunit)
 find_package(Python3 REQUIRED COMPONENTS Development)
 
 # add executable
-add_executable(test mat_test.c matrix.c)
+add_executable(test mat_test.c matrix.c numc.c)
 
 # modify compile and link options
 # target_compile_options(test PRIVATE "${CFLAGS}")
