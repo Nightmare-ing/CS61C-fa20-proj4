@@ -1,4 +1,4 @@
-# Prerequisites
+g Prerequisites
 *.d
 
 # Object files
@@ -256,3 +256,4 @@ server_basic server_process
 
 files.txt
 .idea/*
+cmake-build-debug/*
