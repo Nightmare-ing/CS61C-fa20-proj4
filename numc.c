@@ -574,7 +574,7 @@ PyObject *Matrix61c_get_value(Matrix61c *self, PyObject* args) {
         PyErr_SetString(PyExc_IndexError, "i or j or both out of bounds");
     }
 
-    get(self->mat, i, j);
+    return PyFloat_FromDouble(get(self->mat, i, j));
 }
 
 /*
