@@ -287,7 +287,7 @@ PyObject *Matrix61c_repr(PyObject *self) {
  */
 PyObject *Matrix61c_add(Matrix61c* self, PyObject* args) {
     PyObject *mat = NULL;
-    if (!PyArg_UnpackTuple(args, "args", 1, 1, &mat)) {
+    if (PyArg_UnpackTuple(args, "args", 1, 1, &mat)) {
         PyErr_SetString(PyExc_TypeError, "Invalid arguments");
         return NULL;
     }
@@ -327,7 +327,7 @@ PyObject *Matrix61c_add(Matrix61c* self, PyObject* args) {
  */
 PyObject *Matrix61c_sub(Matrix61c* self, PyObject* args) {
     PyObject *mat = NULL;
-    if (!PyArg_UnpackTuple(args, "args", 1, 1, &mat)) {
+    if (PyArg_UnpackTuple(args, "args", 1, 1, &mat)) {
         PyErr_SetString(PyExc_TypeError, "Invalid arguments");
         return NULL;
     }
@@ -367,7 +367,7 @@ PyObject *Matrix61c_sub(Matrix61c* self, PyObject* args) {
  */
 PyObject *Matrix61c_multiply(Matrix61c* self, PyObject *args) {
     PyObject *mat = NULL;
-    if (!PyArg_UnpackTuple(args, "args", 1, 1, &mat)) {
+    if (PyArg_UnpackTuple(args, "args", 1, 1, &mat)) {
         PyErr_SetString(PyExc_TypeError, "Invalid arguments");
         return NULL;
     }
@@ -534,10 +534,11 @@ PyObject *Matrix61c_set_value(Matrix61c *self, PyObject* args) {
     PyObject *row = NULL;
     PyObject *col = NULL;
     PyObject *val = NULL;
-    if (!PyArg_UnpackTuple(args, "args", 3, 3, &row, &col, &val) ||
+    if (PyArg_UnpackTuple(args, "args", 3, 3, &row, &col, &val) ||
         !(row && col && val && PyLong_Check(row) && PyLong_Check(col) &&
         (PyLong_Check(val) || PyFloat_Check(val)))) {
         PyErr_SetString(PyExc_TypeError, "Invalid arguments");
+        return NULL;
     }
     int i = (int) PyLong_AsLong(row);
     int j = (int) PyLong_AsLong(col);
@@ -547,6 +548,7 @@ PyObject *Matrix61c_set_value(Matrix61c *self, PyObject* args) {
     int cols = self->mat->cols;
     if (i >= rows || j >= cols) {
         PyErr_SetString(PyExc_IndexError, "i or j or both out of bounds");
+        return NULL;
     }
 
     set(self->mat, i, j, val_c);
@@ -560,10 +562,11 @@ PyObject *Matrix61c_set_value(Matrix61c *self, PyObject* args) {
 PyObject *Matrix61c_get_value(Matrix61c *self, PyObject* args) {
     PyObject *row = NULL;
     PyObject *col = NULL;
-    if (!PyArg_UnpackTuple(args, "args", 2, 2, &row, &col) ||
+    if (PyArg_UnpackTuple(args, "args", 2, 2, &row, &col) ||
         !(row && col) ||
         !(PyLong_Check(row) && PyLong_Check(col))) {
         PyErr_SetString(PyExc_TypeError, "Invalid arguments");
+        return NULL;
     }
     int i = (int) PyLong_AsLong(row);
     int j = (int) PyLong_AsLong(col);
@@ -572,6 +575,7 @@ PyObject *Matrix61c_get_value(Matrix61c *self, PyObject* args) {
     int cols = self->mat->cols;
     if (i >= rows || j >= cols) {
         PyErr_SetString(PyExc_IndexError, "i or j or both out of bounds");
+        return NULL;
     }
 
     return PyFloat_FromDouble(get(self->mat, i, j));
@@ -614,12 +618,14 @@ PyObject *Matrix61c_subscript(Matrix61c* self, PyObject* key) {
         !(!PyArg_UnpackTuple(key, "1d args", 1, 1, &index) &&
         index && (PySlice_Check(index) || PyLong_Check(index)))) {
         PyErr_SetString(PyExc_TypeError, "Invalid arguments for 1d matrix");
+        return NULL;
     }
     if (!self->mat->is_1d &&
         !(!PyArg_UnpackTuple(key, "2d args", 1, 2, &index, &index1) &&
             ((index && !index1 && (PySlice_Check(index) || PyLong_Check(index))) ||
             (index && index1 && (PySlice_Check(index) || PyLong_Check(index)) && (PySlice_Check(index1) || PyLong_Check(index1)))))) {
         PyErr_SetString(PyExc_TypeError, "Invalid arguments for 2d matrix");
+        return NULL;
     }
 
     // if the args are integers, convert to slice for uniform operation
@@ -653,6 +659,7 @@ PyObject *Matrix61c_subscript(Matrix61c* self, PyObject* key) {
         int alloc_failed = allocate_matrix_ref(&(result_mat->mat), self->mat->parent, 0, (int) start, 1, (int) slice_length);
         if (alloc_failed) {
             PyErr_SetString(PyExc_RuntimeError, "Slice failed: can't allocate ref matrix");
+            return NULL;
         }
         result_mat->shape = get_shape(1, (int) slice_length);
     } else {
@@ -671,10 +678,12 @@ PyObject *Matrix61c_subscript(Matrix61c* self, PyObject* key) {
         }
         if (step > 1 || slice_length < 1 || step1 > 1 || slice_length1 < 1) {
             PyErr_SetString(PyExc_ValueError, "Slice info not valid");
+            return NULL;
         }
         int alloc_failed = allocate_matrix_ref(&(result_mat->mat), self->mat->parent, (int) start, (int) start1, (int) slice_length, (int) slice_length1);
         if (alloc_failed) {
             PyErr_SetString(PyExc_RuntimeError, "Slice failed: can't allocate ref matrix");
+            return NULL;
         }
         result_mat->shape = get_shape((int) slice_length, (int) slice_length1);
     }
