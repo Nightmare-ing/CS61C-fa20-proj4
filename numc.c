@@ -558,7 +558,23 @@ PyObject *Matrix61c_set_value(Matrix61c *self, PyObject* args) {
  * float/int.
  */
 PyObject *Matrix61c_get_value(Matrix61c *self, PyObject* args) {
-    /* TODO: YOUR CODE HERE */
+    PyObject *row = NULL;
+    PyObject *col = NULL;
+    if (!PyArg_UnpackTuple(args, "args", 2, 2, &row, &col) ||
+        !(row && col) ||
+        !(PyLong_Check(row) && PyLong_Check(col))) {
+        PyErr_SetString(PyExc_TypeError, "Invalid arguments");
+    }
+    int i = (int) PyLong_AsLong(row);
+    int j = (int) PyLong_AsLong(col);
+
+    int rows = self->mat->rows;
+    int cols = self->mat->cols;
+    if (i >= rows || j >= cols) {
+        PyErr_SetString(PyExc_IndexError, "i or j or both out of bounds");
+    }
+
+    get(self->mat, i, j);
 }
 
 /*
