@@ -549,7 +549,7 @@ PyObject *Matrix61c_set_value(Matrix61c *self, PyObject* args) {
         PyErr_SetString(PyExc_IndexError, "i or j or both out of bounds");
     }
 
-    self->mat->data[i][j] = val_c;
+    set(self->mat, i, j, val_c);
 }
 
 /*
