@@ -584,8 +584,8 @@ PyObject *Matrix61c_get_value(Matrix61c *self, PyObject* args) {
  * You might find this link helpful: https://docs.python.org/3.6/c-api/structures.html
  */
 PyMethodDef Matrix61c_methods[] = {
-    /* TODO: YOUR CODE HERE */
-    {NULL, NULL, 0, NULL}
+    {"set", (PyCFunction) Matrix61c_set_value, METH_VARARGS, "set value at specified position row(i) and col(j)"},
+    {"get", (PyCFunction) Matrix61c_get_value, METH_VARARGS, "get value at specified position with row(i) and col(j)"}
 };
 
 /* INDEXING */
