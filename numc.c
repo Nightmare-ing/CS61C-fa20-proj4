@@ -609,22 +609,48 @@ PyObject *convert_to_slice(PyObject *index) {
 }
 
 /*
+ * Helper function, to check whether the slice or ints in key are valid
+ */
+int check_keys(Matrix61c *self, PyObject *key, PyObject **index, PyObject **index1) {
+    if (self->mat->is_1d &&
+            !(!PyArg_UnpackTuple(key, "1d args", 1, 1, index) &&
+            *index && (PySlice_Check(*index) || PyLong_Check(*index)))) {
+        PyErr_SetString(PyExc_TypeError, "Invalid arguments for 1d matrix");
+        return -1;
+    }
+    if (!self->mat->is_1d &&
+        !(!PyArg_UnpackTuple(key, "2d args", 1, 2, index, index1) &&
+          ((*index && !(*index1) && (PySlice_Check(*index) || PyLong_Check(*index))) ||
+           (*index && *index1 && (PySlice_Check(*index) || PyLong_Check(*index)) && (PySlice_Check(*index1) || PyLong_Check(*index1)))))) {
+        PyErr_SetString(PyExc_TypeError, "Invalid arguments for 2d matrix");
+        return -1;
+    }
+    return 0;
+}
+
+/*
+ * Helper function, to extract info from slices and check their validation
+ */
+int extract_slice(PyObject *slice, Py_ssize_t length,
+    Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step, Py_ssize_t *slice_length) {
+    if (PySlice_GetIndicesEx(slice, length, start, stop, step, slice_length)) {
+        PyErr_SetString(PyExc_RuntimeError, "Internal error: get indices from slice failed");
+        return -1;
+    }
+    if (*step > 1 || *slice_length < 1) {
+        PyErr_SetString(PyExc_ValueError, "Slice info not valid");
+        return -1;
+    }
+    return 0;
+}
+
+/*
  * Given a numc.Matrix `self`, index into it with `key`. Return the indexed result.
  */
 PyObject *Matrix61c_subscript(Matrix61c* self, PyObject* key) {
     PyObject *index = NULL;
     PyObject *index1 = NULL;
-    if (self->mat->is_1d &&
-        !(!PyArg_UnpackTuple(key, "1d args", 1, 1, &index) &&
-        index && (PySlice_Check(index) || PyLong_Check(index)))) {
-        PyErr_SetString(PyExc_TypeError, "Invalid arguments for 1d matrix");
-        return NULL;
-    }
-    if (!self->mat->is_1d &&
-        !(!PyArg_UnpackTuple(key, "2d args", 1, 2, &index, &index1) &&
-            ((index && !index1 && (PySlice_Check(index) || PyLong_Check(index))) ||
-            (index && index1 && (PySlice_Check(index) || PyLong_Check(index)) && (PySlice_Check(index1) || PyLong_Check(index1)))))) {
-        PyErr_SetString(PyExc_TypeError, "Invalid arguments for 2d matrix");
+    if (check_keys(self, key, &index, &index1)) {
         return NULL;
     }
 
@@ -652,13 +678,12 @@ PyObject *Matrix61c_subscript(Matrix61c* self, PyObject* key) {
         }
 
         // if not, should return a new matrix which inherits part of its parent's data
-        if (PySlice_GetIndicesEx(slice, length, &start, &stop, &step, &slice_length)) {
-            PyErr_SetString(PyExc_RuntimeError, "Internal error: get indices from slice failed");
+        if (extract_slice(slice, length, &start, &stop, &step, &slice_length)) {
             return NULL;
         }
-        if (step > 1 || slice_length < 1) {
-            PyErr_SetString(PyExc_ValueError, "Slice info not valid");
-            return NULL;
+
+        if (slice_length == 1) {
+            return PyFloat_FromDouble(get(self->mat, 0, (int) start));
         }
 
         int alloc_failed = allocate_matrix_ref(&(result_mat->mat), self->mat->parent, 0, (int) start, 1, (int) slice_length);
@@ -681,15 +706,15 @@ PyObject *Matrix61c_subscript(Matrix61c* self, PyObject* key) {
         }
 
         // if not, should return a new matrix which inherits part of its parent's data
-        if (PySlice_GetIndicesEx(slice, length, &start, &stop, &step, &slice_length) ||
-            PySlice_GetIndicesEx(slice1, length1, &start1, &stop1, &step1, &slice_length1)) {
-            PyErr_SetString(PyExc_RuntimeError, "Internal error: get indices from slice failed");
+        if (extract_slice(slice, length, &start, &stop, &step, &slice_length) ||
+            extract_slice(slice1, length1, &start1, &stop1, &step1, &slice_length1)) {
             return NULL;
         }
-        if (step > 1 || slice_length < 1 || step1 > 1 || slice_length1 < 1) {
-            PyErr_SetString(PyExc_ValueError, "Slice info not valid");
-            return NULL;
+
+        if (slice_length == 1 && slice_length1 == 1) {
+            return (PyObject *) PyFloat_FromDouble(get(self->mat, (int) start, (int) start1));
         }
+
         int alloc_failed = allocate_matrix_ref(&(result_mat->mat), self->mat->parent, (int) start, (int) start1, (int) slice_length, (int) slice_length1);
         if (alloc_failed) {
             PyErr_SetString(PyExc_RuntimeError, "Slice failed: can't allocate ref matrix");
