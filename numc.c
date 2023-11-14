@@ -640,13 +640,18 @@ PyObject *Matrix61c_subscript(Matrix61c* self, PyObject* key) {
     Matrix61c *result_mat = (Matrix61c *) Matrix61c_new(&Matrix61cType, NULL, NULL);
 
     if (self->mat->is_1d) {
+        length = self->mat->rows > 1 ? self->mat->rows + 1 : self->mat->cols + 1;
         // if index is an integer, just need to return the value
         if (PyLong_Check(index)) {
-            return PyFloat_FromDouble(get(self->mat, 0, (int) PyLong_AsLong(index)));
+            int value = (int) PyLong_AsLong(index);
+            if (value >= length) {
+                PyErr_SetString(PyExc_IndexError, "Index out of bounds");
+                return NULL;
+            }
+            return PyFloat_FromDouble(get(self->mat, 0, value));
         }
 
         // if not, should return a new matrix which inherits part of its parent's data
-        length = self->mat->rows > 1 ? self->mat->rows : self->mat->cols;
         if (PySlice_GetIndicesEx(slice, length, &start, &stop, &step, &slice_length)) {
             PyErr_SetString(PyExc_RuntimeError, "Internal error: get indices from slice failed");
             return NULL;
@@ -663,14 +668,19 @@ PyObject *Matrix61c_subscript(Matrix61c* self, PyObject* key) {
         }
         result_mat->shape = get_shape(1, (int) slice_length);
     } else {
+        length = self->mat->rows + 1;
+        length1 = self->mat->cols + 1;
         // if two index are integer, just return the value
         if (PyLong_Check(index) && PyLong_Check(index1)) {
+            int value = (int) PyLong_AsLong(index);
+            int value1 = (int) PyLong_AsLong(index1);
+            if (value >= length || value1 > length1) {
+                PyErr_SetString(PyExc_IndexError, "Index out of bounds");
+            }
             return PyFloat_FromDouble(get(self->mat, (int) PyLong_AsLong(index), (int) PyLong_AsLong(index1)));
         }
 
         // if not, should return a new matrix which inherits part of its parent's data
-        length = self->mat->rows;
-        length1 = self->mat->cols;
         if (PySlice_GetIndicesEx(slice, length, &start, &stop, &step, &slice_length) ||
             PySlice_GetIndicesEx(slice1, length1, &start1, &stop1, &step1, &slice_length1)) {
             PyErr_SetString(PyExc_RuntimeError, "Internal error: get indices from slice failed");
