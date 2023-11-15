@@ -552,6 +552,7 @@ PyObject *Matrix61c_set_value(Matrix61c *self, PyObject* args) {
     }
 
     set(self->mat, i, j, val_c);
+    return Py_None;
 }
 
 /*
@@ -810,13 +811,13 @@ int Matrix61c_set_subscript(Matrix61c* self, PyObject *key, PyObject *v) {
             if (slice_length == 1 && slice_length1 == 1) {
                 if (!(PyLong_Check(v) || PyFloat_Check(v))) {
                     PyErr_SetString(PyExc_TypeError, "v is not valid for 1 by 1 slice");
+                    return -1;
                 }
-                return -1;
             } else {
                 if (!PyList_Check(v)) {
                     PyErr_SetString(PyExc_TypeError, "v is not valid for not 1 by 1 slice");
+                    return -1;
                 }
-                return -1;
             }
 
             if (length == 1) {
@@ -834,7 +835,7 @@ int Matrix61c_set_subscript(Matrix61c* self, PyObject *key, PyObject *v) {
                 if (length != PyList_Size(v)) {
                     PyErr_SetString(PyExc_TypeError, "v has wrong number of items");
                 }
-                for (int i = 0; i < PyList_Size(v); ++i ) {
+                for (int i = 0; i < PyList_Size(v); ++i) {
                     PyObject *item_list = PyList_GetItem(v, (Py_ssize_t) i);
                     if (length1 != PyList_Size(item_list) || !PyList_Check(item_list)) {
                         PyErr_SetString(PyExc_ValueError, "v has wrong number of items or is not a list");
@@ -851,11 +852,13 @@ int Matrix61c_set_subscript(Matrix61c* self, PyObject *key, PyObject *v) {
 
             for (Py_ssize_t i = start; i < stop; i += step) {
                 for (Py_ssize_t j = start1; j < stop; j += step1) {
-                    set(self->mat, (int) i, (int) j, PyFloat_AsDouble(PyList_GetItem(PyList_GetItem(v, (Py_ssize_t) i), (Py_ssize_t) j)));
+                    set(self->mat, (int) i, (int) j,
+                        PyFloat_AsDouble(PyList_GetItem(PyList_GetItem(v, (Py_ssize_t) i), (Py_ssize_t) j)));
                 }
             }
         }
-        return 0;
+    }
+    return 0;
 }
 
 PyMappingMethods Matrix61c_mapping = {
