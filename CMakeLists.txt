@@ -15,6 +15,7 @@ find_package(Python3 REQUIRED COMPONENTS Development)
 
 # add executable
 add_executable(test mat_test.c matrix.c numc.c)
+add_executable(dumbpy dumbmatrix.c dumbpy.c)
 
 # modify compile and link options
 # target_compile_options(test PRIVATE "${CFLAGS}")
@@ -25,6 +26,13 @@ target_include_directories(test PRIVATE
         "./"
         ${Python3_INCLUDE_DIRS})
 target_link_libraries(test PRIVATE
+        ${CUNIT_LIBRARY}
+        ${Python3_LIBRARIES})
+
+target_include_directories(dumbpy PRIVATE
+        "./"
+        ${Python3_INCLUDE_DIRS})
+target_link_libraries(dumbpy PRIVATE
         ${CUNIT_LIBRARY}
         ${Python3_LIBRARIES})
 

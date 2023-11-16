@@ -1,6 +1,7 @@
 from distutils.core import setup, Extension
 import sysconfig
 
+
 def main():
     CFLAGS = ['-g', '-Wall', '-std=c99', '-fopenmp', '-mavx', '-mfma', '-pthread', '-O3']
     LDFLAGS = ['-fopenmp']
@@ -14,6 +15,7 @@ def main():
     setup(name='numcPackage',
           version='1.0',
           ext_modules=[numc_module])
+
 
 if __name__ == "__main__":
     main()
