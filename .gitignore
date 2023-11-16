@@ -255,5 +255,6 @@ server_basic server_process
 **/*._sobel.bmp
 
 files.txt
+files2.txt
 .idea/*
-cmake-build-debug/*
+cmake-build-debug
