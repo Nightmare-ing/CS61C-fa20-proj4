@@ -287,7 +287,7 @@ PyObject *Matrix61c_repr(PyObject *self) {
  */
 PyObject *Matrix61c_add(Matrix61c* self, PyObject* args) {
     PyObject *mat = NULL;
-    if (!PyArg_UnpackTuple(args, "args", 1, 1, &mat)) {
+    if (PyArg_UnpackTuple(args, "args", 1, 1, &mat)) {
         PyErr_SetString(PyExc_TypeError, "Invalid arguments");
         return NULL;
     }
@@ -327,7 +327,7 @@ PyObject *Matrix61c_add(Matrix61c* self, PyObject* args) {
  */
 PyObject *Matrix61c_sub(Matrix61c* self, PyObject* args) {
     PyObject *mat = NULL;
-    if (!PyArg_UnpackTuple(args, "args", 1, 1, &mat)) {
+    if (PyArg_UnpackTuple(args, "args", 1, 1, &mat)) {
         PyErr_SetString(PyExc_TypeError, "Invalid arguments");
         return NULL;
     }
@@ -367,7 +367,7 @@ PyObject *Matrix61c_sub(Matrix61c* self, PyObject* args) {
  */
 PyObject *Matrix61c_multiply(Matrix61c* self, PyObject *args) {
     PyObject *mat = NULL;
-    if (!PyArg_UnpackTuple(args, "args", 1, 1, &mat)) {
+    if (PyArg_UnpackTuple(args, "args", 1, 1, &mat)) {
         PyErr_SetString(PyExc_TypeError, "Invalid arguments");
         return NULL;
     }
@@ -534,10 +534,11 @@ PyObject *Matrix61c_set_value(Matrix61c *self, PyObject* args) {
     PyObject *row = NULL;
     PyObject *col = NULL;
     PyObject *val = NULL;
-    if (!PyArg_UnpackTuple(args, "args", 3, 3, &row, &col, &val) ||
+    if (PyArg_UnpackTuple(args, "args", 3, 3, &row, &col, &val) ||
         !(row && col && val && PyLong_Check(row) && PyLong_Check(col) &&
         (PyLong_Check(val) || PyFloat_Check(val)))) {
         PyErr_SetString(PyExc_TypeError, "Invalid arguments");
+        return NULL;
     }
     int i = (int) PyLong_AsLong(row);
     int j = (int) PyLong_AsLong(col);
@@ -547,9 +548,11 @@ PyObject *Matrix61c_set_value(Matrix61c *self, PyObject* args) {
     int cols = self->mat->cols;
     if (i >= rows || j >= cols) {
         PyErr_SetString(PyExc_IndexError, "i or j or both out of bounds");
+        return NULL;
     }
 
     set(self->mat, i, j, val_c);
+    return Py_None;
 }
 
 /*
@@ -560,10 +563,11 @@ PyObject *Matrix61c_set_value(Matrix61c *self, PyObject* args) {
 PyObject *Matrix61c_get_value(Matrix61c *self, PyObject* args) {
     PyObject *row = NULL;
     PyObject *col = NULL;
-    if (!PyArg_UnpackTuple(args, "args", 2, 2, &row, &col) ||
+    if (PyArg_UnpackTuple(args, "args", 2, 2, &row, &col) ||
         !(row && col) ||
         !(PyLong_Check(row) && PyLong_Check(col))) {
         PyErr_SetString(PyExc_TypeError, "Invalid arguments");
+        return NULL;
     }
     int i = (int) PyLong_AsLong(row);
     int j = (int) PyLong_AsLong(col);
@@ -572,6 +576,7 @@ PyObject *Matrix61c_get_value(Matrix61c *self, PyObject* args) {
     int cols = self->mat->cols;
     if (i >= rows || j >= cols) {
         PyErr_SetString(PyExc_IndexError, "i or j or both out of bounds");
+        return NULL;
     }
 
     return PyFloat_FromDouble(get(self->mat, i, j));
@@ -592,17 +597,269 @@ PyMethodDef Matrix61c_methods[] = {
 /* INDEXING */
 
 /*
+ * Helper function: if a index has two possible types, integer or slice, change it to one type(slice)
+ * for convenience.
+*/
+PyObject *convert_to_slice(PyObject *index) {
+    if (PyLong_Check(index)) {
+        PyObject *start = index;
+        PyObject *stop = PyNumber_Add(index, PyLong_FromLong(1));
+        PyObject *step = PyLong_FromLong(1);
+        return PySlice_New(start, stop, step);
+    }
+    return index;
+}
+
+/*
+ * Helper function, to check whether the slice or ints in key are valid
+ */
+int check_keys(Matrix61c *self, PyObject *key, PyObject **index, PyObject **index1) {
+    if (self->mat->is_1d &&
+            !(!PyArg_UnpackTuple(key, "1d args", 1, 1, index) &&
+            *index && (PySlice_Check(*index) || PyLong_Check(*index)))) {
+        PyErr_SetString(PyExc_TypeError, "Invalid arguments for 1d matrix");
+        return -1;
+    }
+    if (!self->mat->is_1d &&
+        !(!PyArg_UnpackTuple(key, "2d args", 1, 2, index, index1) &&
+          ((*index && !(*index1) && (PySlice_Check(*index) || PyLong_Check(*index))) ||
+           (*index && *index1 && (PySlice_Check(*index) || PyLong_Check(*index)) && (PySlice_Check(*index1) || PyLong_Check(*index1)))))) {
+        PyErr_SetString(PyExc_TypeError, "Invalid arguments for 2d matrix");
+        return -1;
+    }
+    return 0;
+}
+
+/*
+ * Helper function, to extract info from slices and check their validation
+ */
+int extract_slice(PyObject *slice, Py_ssize_t length,
+    Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step, Py_ssize_t *slice_length) {
+    if (PySlice_GetIndicesEx(slice, length, start, stop, step, slice_length)) {
+        PyErr_SetString(PyExc_RuntimeError, "Internal error: get indices from slice failed");
+        return -1;
+    }
+    if (*step > 1 || *slice_length < 1) {
+        PyErr_SetString(PyExc_ValueError, "Slice info not valid");
+        return -1;
+    }
+    return 0;
+}
+
+/*
  * Given a numc.Matrix `self`, index into it with `key`. Return the indexed result.
  */
 PyObject *Matrix61c_subscript(Matrix61c* self, PyObject* key) {
-    /* TODO: YOUR CODE HERE */
+    PyObject *index = NULL;
+    PyObject *index1 = NULL;
+    if (check_keys(self, key, &index, &index1)) {
+        return NULL;
+    }
+
+    // if the args are integers, convert to slice for uniform operation
+    PyObject *slice = convert_to_slice(index);
+    PyObject *slice1 = NULL;
+    if (!index1) {
+        slice1 = convert_to_slice(index1);
+    }
+
+    Py_ssize_t start = 0, stop = 0, step = 0, length = 0, slice_length = 0;
+    Py_ssize_t start1 = 0, stop1 = 0, step1 = 0, length1 = 0, slice_length1 = 0;
+    Matrix61c *result_mat = (Matrix61c *) Matrix61c_new(&Matrix61cType, NULL, NULL);
+
+    if (self->mat->is_1d) {
+        length = self->mat->rows > 1 ? self->mat->rows + 1 : self->mat->cols + 1;
+        // if index is an integer, just need to return the value
+        if (PyLong_Check(index)) {
+            int value = (int) PyLong_AsLong(index);
+            if (value >= length) {
+                PyErr_SetString(PyExc_IndexError, "Index out of bounds");
+                return NULL;
+            }
+            return PyFloat_FromDouble(get(self->mat, 0, value));
+        }
+
+        // if not, should return a new matrix which inherits part of its parent's data
+        if (extract_slice(slice, length, &start, &stop, &step, &slice_length)) {
+            return NULL;
+        }
+
+        if (slice_length == 1) {
+            return PyFloat_FromDouble(get(self->mat, 0, (int) start));
+        }
+
+        int alloc_failed = allocate_matrix_ref(&(result_mat->mat), self->mat->parent, 0, (int) start, 1, (int) slice_length);
+        if (alloc_failed) {
+            PyErr_SetString(PyExc_RuntimeError, "Slice failed: can't allocate ref matrix");
+            return NULL;
+        }
+        result_mat->shape = get_shape(1, (int) slice_length);
+    } else {
+        length = self->mat->rows + 1;
+        length1 = self->mat->cols + 1;
+        // if two index are integer, just return the value
+        if (PyLong_Check(index) && PyLong_Check(index1)) {
+            int value = (int) PyLong_AsLong(index);
+            int value1 = (int) PyLong_AsLong(index1);
+            if (value >= length || value1 > length1) {
+                PyErr_SetString(PyExc_IndexError, "Index out of bounds");
+            }
+            return PyFloat_FromDouble(get(self->mat, (int) PyLong_AsLong(index), (int) PyLong_AsLong(index1)));
+        }
+
+        // if not, should return a new matrix which inherits part of its parent's data
+        if (extract_slice(slice, length, &start, &stop, &step, &slice_length) ||
+            extract_slice(slice1, length1, &start1, &stop1, &step1, &slice_length1)) {
+            return NULL;
+        }
+
+        if (slice_length == 1 && slice_length1 == 1) {
+            return (PyObject *) PyFloat_FromDouble(get(self->mat, (int) start, (int) start1));
+        }
+
+        int alloc_failed = allocate_matrix_ref(&(result_mat->mat), self->mat->parent, (int) start, (int) start1, (int) slice_length, (int) slice_length1);
+        if (alloc_failed) {
+            PyErr_SetString(PyExc_RuntimeError, "Slice failed: can't allocate ref matrix");
+            return NULL;
+        }
+        result_mat->shape = get_shape((int) slice_length, (int) slice_length1);
+    }
+
+    return (PyObject *) result_mat;
 }
 
 /*
  * Given a numc.Matrix `self`, index into it with `key`, and set the indexed result to `v`.
  */
 int Matrix61c_set_subscript(Matrix61c* self, PyObject *key, PyObject *v) {
-    /* TODO: YOUR CODE HERE */
+    PyObject *index = NULL;
+    PyObject *index1 = NULL;
+    if (check_keys(self, key, &index, &index1)) {
+        return -1;
+    }
+
+    // if the args are integers, convert to slice for uniform operation
+    PyObject *slice = convert_to_slice(index);
+    PyObject *slice1 = NULL;
+    if (!index1) {
+        slice1 = convert_to_slice(index1);
+    }
+
+    Py_ssize_t start = 0, stop = 0, step = 0, length = 0, slice_length = 0;
+    Py_ssize_t start1 = 0, stop1 = 0, step1 = 0, length1 = 0, slice_length1 = 0;
+
+    if (self->mat->is_1d) {
+        length = self->mat->rows > 1 ? self->mat->rows + 1 : self->mat->cols + 1;
+        // if index is an integer, just need to set the value
+        if (PyLong_Check(index)) {
+            int value = (int) PyLong_AsLong(index);
+            if (value >= length) {
+                PyErr_SetString(PyExc_IndexError, "Index out of bounds");
+                return -1;
+            }
+            if (!PyFloat_Check(v)) {
+                PyErr_SetString(PyExc_TypeError, "v is not valid for 1D matrix with an integer to index");
+                return -1;
+            }
+            set(self->mat, 0, value, PyFloat_AsDouble(v));
+            return 0;
+        }
+
+        // if not, should set a list of value
+        if (extract_slice(slice, length, &start, &stop, &step, &slice_length)) {
+            if (!PyList_Check(v)) {
+                PyErr_SetString(PyExc_TypeError, "v is not valid for 1D matrix with a slice");
+                return -1;
+            }
+
+            if (length != PyList_Size(v)) {
+                PyErr_SetString(PyExc_ValueError, "v has wrong length");
+            }
+            for (int i = 0; i < PyList_Size(v); ++i) {
+                PyObject *item = PyList_GetItem(v, (Py_ssize_t) i);
+                if (!(PyLong_Check(item) || PyFloat_Check(item))) {
+                    PyErr_SetString(PyExc_ValueError, "some element of v is not a float or int");
+                    return -1;
+                }
+            }
+
+            for (Py_ssize_t i = start; i < stop; i += step) {
+                set(self->mat, 0, (int) i, PyFloat_AsDouble(PyList_GetItem(v, i)));
+            }
+            return 0;
+        }
+    } else {
+        length = self->mat->rows + 1;
+        length1 = self->mat->cols + 1;
+        // if two index are integer, just set the value
+        if (PyLong_Check(index) && PyLong_Check(index1)) {
+            int row = (int) PyLong_AsLong(index);
+            int col = (int) PyLong_AsLong(index1);
+            if (row >= length || col > length1) {
+                PyErr_SetString(PyExc_IndexError, "Index out of bounds");
+            }
+            if (!PyFloat_Check(v)) {
+                PyErr_SetString(PyExc_TypeError, "v is not valid for 2D matrix with two integers");
+                return -1;
+            }
+            set(self->mat, (int) row, (int) col, PyFloat_AsDouble(v));
+            return 0;
+        }
+
+        // if not, should return a new matrix which inherits part of its parent's data
+        if (extract_slice(slice, length, &start, &stop, &step, &slice_length) ||
+            extract_slice(slice1, length1, &start1, &stop1, &step1, &slice_length1)) {
+            if (slice_length == 1 && slice_length1 == 1) {
+                if (!(PyLong_Check(v) || PyFloat_Check(v))) {
+                    PyErr_SetString(PyExc_TypeError, "v is not valid for 1 by 1 slice");
+                    return -1;
+                }
+            } else {
+                if (!PyList_Check(v)) {
+                    PyErr_SetString(PyExc_TypeError, "v is not valid for not 1 by 1 slice");
+                    return -1;
+                }
+            }
+
+            if (length == 1) {
+                if (length1 != PyList_Size(v)) {
+                    PyErr_SetString(PyExc_ValueError, "v has the wrong length");
+                }
+                for (int i = 0; i < PyList_Size(v); ++i) {
+                    PyObject *item = PyList_GetItem(v, (Py_ssize_t) i);
+                    if (!(PyLong_Check(item) || PyFloat_Check(item))) {
+                        PyErr_SetString(PyExc_ValueError, "some element of v is not a float or int");
+                        return -1;
+                    }
+                }
+            } else {
+                if (length != PyList_Size(v)) {
+                    PyErr_SetString(PyExc_TypeError, "v has wrong number of items");
+                }
+                for (int i = 0; i < PyList_Size(v); ++i) {
+                    PyObject *item_list = PyList_GetItem(v, (Py_ssize_t) i);
+                    if (length1 != PyList_Size(item_list) || !PyList_Check(item_list)) {
+                        PyErr_SetString(PyExc_ValueError, "v has wrong number of items or is not a list");
+                    }
+                    for (int j = 0; j < PyList_Size(item_list); ++j) {
+                        PyObject *item = PyList_GetItem(item_list, (Py_ssize_t) j);
+                        if (!PyLong_Check(item) || PyFloat_Check(item)) {
+                            PyErr_SetString(PyExc_ValueError, "some element of v is not a float or int");
+                            return -1;
+                        }
+                    }
+                }
+            }
+
+            for (Py_ssize_t i = start; i < stop; i += step) {
+                for (Py_ssize_t j = start1; j < stop; j += step1) {
+                    set(self->mat, (int) i, (int) j,
+                        PyFloat_AsDouble(PyList_GetItem(PyList_GetItem(v, (Py_ssize_t) i), (Py_ssize_t) j)));
+                }
+            }
+        }
+    }
+    return 0;
 }
 
 PyMappingMethods Matrix61c_mapping = {
