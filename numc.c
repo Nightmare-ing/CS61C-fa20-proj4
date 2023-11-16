@@ -585,7 +585,8 @@ PyObject *Matrix61c_get_value(Matrix61c *self, PyObject* args) {
  */
 PyMethodDef Matrix61c_methods[] = {
     {"set", (PyCFunction) Matrix61c_set_value, METH_VARARGS, "set value at specified position row(i) and col(j)"},
-    {"get", (PyCFunction) Matrix61c_get_value, METH_VARARGS, "get value at specified position with row(i) and col(j)"}
+    {"get", (PyCFunction) Matrix61c_get_value, METH_VARARGS, "get value at specified position with row(i) and col(j)"},
+        {NULL, NULL, 0, NULL} // sentinel indicating the end of the method table
 };
 
 /* INDEXING */
