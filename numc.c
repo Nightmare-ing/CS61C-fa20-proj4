@@ -651,8 +651,8 @@ int extract_slice(PyObject *slice, Py_ssize_t length,
 /* Helper function, to create a new Matrix from slice */
 PyObject *matrix61c_from_slice(PyObject* slice, PyObject *slice1, Matrix61c *source) {
     Matrix61c *result = (Matrix61c *) Matrix61c_new(&Matrix61cType, NULL, NULL);
-    Py_ssize_t start = 0, stop = 0, step = 0, length = 0, slice_length = 0;
-    Py_ssize_t start1 = 0, stop1 = 0, step1 = 0, length1 = 0, slice_length1 = 0;
+    Py_ssize_t start = 0, stop = 0, step = 0, length = source->mat->rows, slice_length = 0;
+    Py_ssize_t start1 = 0, stop1 = 0, step1 = 0, length1 = source->mat->cols, slice_length1 = 0;
 
     // extract slice
     int extract_failed = extract_slice(slice, length, &start, &stop, &step, &slice_length) ||
@@ -696,11 +696,11 @@ PyObject *Matrix61c_subscript(Matrix61c* self, PyObject* key) {
                 return PyFloat_FromDouble(self->mat->data[value][0]);
             }
             if (self->mat->rows == 1) {
-                row_slice = index;
-                col_slice = PySlice_New(PyLong_FromLong(0), PyLong_FromLong(1), PyLong_FromLong(1));
-            } else {
                 row_slice = PySlice_New(PyLong_FromLong(0), PyLong_FromLong(1), PyLong_FromLong(1));
                 col_slice = index;
+            } else {
+                row_slice = index;
+                col_slice = PySlice_New(PyLong_FromLong(0), PyLong_FromLong(1), PyLong_FromLong(1));
             }
         } else {
         // 2d matrix
