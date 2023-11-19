@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -Wall -std=c99 -fopenmp -mavx -mfma -pthread
+CFLAGS = -g -Wall -std=c99 -fopenmp -mavx -mfma -pthread -O0
 LDFLAGS = -fopenmp
 # CUNIT = -L/home/ff/cs61c/cunit/install/lib -I/home/ff/cs61c/cunit/install/include -lcunit
 CUNIT = -lcunit
