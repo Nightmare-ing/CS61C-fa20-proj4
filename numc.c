@@ -702,18 +702,21 @@ PyObject *Matrix61c_subscript(Matrix61c* self, PyObject* key) {
                 row_slice = PySlice_New(PyLong_FromLong(0), PyLong_FromLong(1), PyLong_FromLong(1));
                 col_slice = index;
             }
-        }
+        } else {
         // 2d matrix
-        if (PyLong_Check(index)) {
-            int value = (int) PyLong_AsLong(index);
-            row_slice = PySlice_New(PyLong_FromLong(value), PyLong_FromLong(value + 1), PyLong_FromLong(1));
+            if (PyLong_Check(index)) {
+                int value = (int) PyLong_AsLong(index);
+                row_slice = PySlice_New(PyLong_FromLong(value), PyLong_FromLong(value + 1), PyLong_FromLong(1));
+            } else {
+                row_slice = index;
+            }
+            col_slice = PySlice_New(PyLong_FromLong(0), PyLong_FromLong(self->mat->cols), PyLong_FromLong(1));
         }
-        col_slice = PySlice_New(PyLong_FromLong(0), PyLong_FromLong(self->mat->cols), PyLong_FromLong(1));
+    } else {
+        // if two indexes
+        row_slice = PyLong_Check(index) ? convert_to_slice(index) : index;
+        col_slice = PyLong_Check(index1) ? convert_to_slice(index1) : index1;
     }
-
-    // if two indexes
-    row_slice = PyLong_Check(index) ? convert_to_slice(index) : index;
-    col_slice = PyLong_Check(index1) ? convert_to_slice(index1) : index1;
 
     return matrix61c_from_slice(row_slice, col_slice, self);
 }
