@@ -198,7 +198,7 @@ class TestSubscript(TestCase):
         self.assertEqual(nc_mat[0:1, 0:1], 1)
 
     def test_2d_invalid_access(self):
-        dp_mat, nc_mat = dp_nc_matrix(2, 3, [[1, 2, 3], [4, 5, 6]])
+        _, nc_mat = dp_nc_matrix([[1, 2, 3], [4, 5, 6]])
 
         # TypeError if not an integer, a slice or a length-2 tuple of slices/ints
         self.assertRaises(TypeError, lambda: nc_mat[2.0])
@@ -218,7 +218,7 @@ class TestSubscript(TestCase):
         self.assertRaises(IndexError, lambda: nc_mat[10, 1])
         self.assertRaises(IndexError, lambda: nc_mat[10, 0:2])
         self.assertRaises(IndexError, lambda: nc_mat[0:2, 10])
-        cmp_dp_nc_matrix(dp_mat[1, 0:100], nc_mat[1, 0:100])
+        cmp_dp_nc_matrix(nc.Matrix([[4, 5, 6]]), nc_mat[1, 0:100])
 
 
 
