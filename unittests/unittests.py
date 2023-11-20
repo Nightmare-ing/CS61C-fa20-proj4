@@ -176,17 +176,15 @@ class TestSubscript(TestCase):
         self.assertRaises(IndexError, lambda: nc_mat[10])
 
     def test_2d_valid_access(self):
-        dp_mat, nc_mat = dp_nc_matrix(2, 3, [[1, 2, 3], [4, 5, 6]])
-        rand_row = np.random.randint(nc_mat.shape[0])
-        rand_col = np.random.randint(nc_mat.shape[1])
+        _, nc_mat = dp_nc_matrix([[1, 2, 3], [4, 5, 6]])
 
         # the key could be an integer, a single slice
-        cmp_dp_nc_matrix(dp_mat[rand_row], nc_mat[rand_row])
-        cmp_dp_nc_matrix(dp_mat[0:rand_row], nc_mat[0:rand_row])
+        cmp_dp_nc_matrix(nc.Matrix([[4, 5, 6]]), nc_mat[1])
+        cmp_dp_nc_matrix(nc.Matrix([[1, 2, 3], [4, 5, 6]]), nc_mat[0:2])
 
         # the key could be a tuple of two ints/slices
-        self.assertEquals(dp_mat[rand_row, rand_col], nc_mat[rand_row, rand_col])
-        cmp_dp_nc_matrix(dp_mat[0:2, 0:2], nc_mat[0:2, 0:2])
+        self.assertEqual(nc_mat[1, 2], 6)
+        cmp_dp_nc_matrix(nc.Matrix([[1, 2], [4, 5]]), nc_mat[0:2, 0:2])
 
         # check modifications to sliced mat will/won't show in original mat
         # nc_mat[0] = [10, 10, 10]
@@ -195,9 +193,9 @@ class TestSubscript(TestCase):
         # cmp_dp_nc_matrix(nc.Matrix(2, 3, [[10, 10, 10], [4, 5, 6]]), nc_mat)
 
         # return a number if the resulting slice is 1 by 1
-        self.assertEquals(nc_mat[1][0], 4)
-        self.assertEquals(nc_mat[1, 1], 5)
-        self.assertEquals(nc_mat[0:1, 0:1], 4)
+        self.assertEqual(nc_mat[1][0], 4)
+        self.assertEqual(nc_mat[1, 1], 5)
+        self.assertEqual(nc_mat[0:1, 0:1], 1)
 
     def test_2d_invalid_access(self):
         dp_mat, nc_mat = dp_nc_matrix(2, 3, [[1, 2, 3], [4, 5, 6]])

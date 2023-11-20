@@ -682,6 +682,11 @@ PyObject *matrix61c_from_slice(PyObject* slice, PyObject *slice1, Matrix61c *sou
         return NULL;
     }
 
+    // if two slice lengths are both 1
+    if (slice_length == 1 && slice_length1 == 1) {
+        return PyFloat_FromDouble(source->mat->data[(int) start][(int) start1]);
+    }
+
     int alloc_failed = allocate_matrix_ref(&(result->mat), source->mat,
         (int) start, (int) start1, (int) slice_length, (int) slice_length1);
     if (alloc_failed) {
