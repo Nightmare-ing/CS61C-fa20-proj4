@@ -168,7 +168,7 @@ class TestSubscript(TestCase):
         self.assertRaises(TypeError, lambda: nc_mat[0:2, 0:2])
 
         # raise ValueError if slice step size != 1, or length of slice < 1
-        self.assertEquals(nc.Matrix(1, 2, [1, 1]), nc_mat[0:2:1])
+        cmp_dp_nc_matrix(nc.Matrix(1, 2, [1, 1]), nc_mat[0:2:1])
         self.assertRaises(ValueError, lambda: nc_mat[0:3:2])
         self.assertRaises(ValueError, lambda: nc_mat[0:0])
 
