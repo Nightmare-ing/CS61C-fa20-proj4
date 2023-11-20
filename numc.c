@@ -611,19 +611,40 @@ PyObject *convert_to_slice(PyObject *index) {
 }
 
 /*
+ * Helper function, enhanced version of PyLong_Check to check index out of bounds at the same time.
+ */
+int inbounds_check(PyObject *value, int bounds) {
+    if (PyLong_Check(value) && (int) PyLong_AsLong(value) >= bounds) {
+        PyErr_SetString(PyExc_IndexError, "Index out of bounds");
+        return 0;
+    }
+    return 1;
+}
+
+
+/*
  * Helper function, to check whether the slice or ints in key are valid
  */
 int check_keys(Matrix61c *self, PyObject *key, PyObject **index, PyObject **index1) {
+
     // if key is a single int or a single slice
     if (PyLong_Check(key) || PySlice_Check(key)) {
+        if (!inbounds_check(key, self->mat->rows * self->mat->cols)) {
+            return -1;
+        }
         *index = key;
         return 0;
     }
     // if key is a tuple, only 2d-matrix is valid
     if (PyTuple_Check(key) && !self->mat->is_1d) {
         if (PyArg_UnpackTuple(key, "key", 1, 2, index, index1) &&
-            index && index1 &&
-            ((PyLong_Check(index) || PySlice_Check(index)) && ((PyLong_Check(index1) || PySlice_Check(index1))))) {
+            *index && *index1 &&
+            ((PyLong_Check(*index) || PySlice_Check(*index)) &&
+            ((PyLong_Check(*index1) || PySlice_Check(*index1))))) {
+            if (!inbounds_check(*index, self->mat->rows) ||
+                !inbounds_check(*index1, self->mat->cols)) {
+                return -1;
+            }
             return 0;
         }
     }
