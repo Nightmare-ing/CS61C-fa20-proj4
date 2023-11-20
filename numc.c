@@ -714,18 +714,17 @@ PyObject *Matrix61c_subscript(Matrix61c* self, PyObject* key) {
     if (index1 == NULL) {
         // 1d matrix
         if (self->mat->is_1d) {
-            if (PyLong_Check(index)) {
-                int value = (int) PyLong_AsLong(index);
-                if (self->mat->rows == 1) {
-                    return PyFloat_FromDouble(self->mat->data[0][value]);
-                }
-                return PyFloat_FromDouble(self->mat->data[value][0]);
-            }
             if (self->mat->rows == 1) {
                 row_slice = PySlice_New(PyLong_FromLong(0), PyLong_FromLong(1), PyLong_FromLong(1));
-                col_slice = index;
+                col_slice = PySlice_Check(index) ?
+                            index :
+                            PySlice_New(index, PyNumber_Add(index, PyLong_FromLong(1)),
+                                        PyLong_FromLong(1));
             } else {
-                row_slice = index;
+                row_slice = PySlice_Check(index) ?
+                            index :
+                            PySlice_New(index, PyNumber_Add(index, PyLong_FromLong(1)),
+                                        PyLong_FromLong(1));
                 col_slice = PySlice_New(PyLong_FromLong(0), PyLong_FromLong(1), PyLong_FromLong(1));
             }
         } else {
