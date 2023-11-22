@@ -150,14 +150,10 @@ class TestSubscript(TestCase):
             self.assertEqual(nc_mat1[i], 2)
 
         # test slice access
-        slice_nc_mat = nc_mat[0:2]
-        cmp_dp_nc_matrix(nc.Matrix(1, 2, [1, 1]), slice_nc_mat)
-        slice_nc_mat1 = nc_mat1[0:2]
-        cmp_dp_nc_matrix(nc.Matrix(1, 2, [2, 2]), slice_nc_mat1)
-
-        # check modification to sliced mat shows in original mat
-        # slice_nc_mat[0] = 10
-        # self.assertEqual(nc_mat[0], 10)
+        cmp_dp_nc_matrix(nc.Matrix(1, 2, [1, 1]), nc_mat[0:2])
+        cmp_dp_nc_matrix(nc.Matrix(1, 2, [2, 2]), nc_mat[0:2])
+        self.assertEqual(nc_mat[0:1], 1)
+        cmp_dp_nc_matrix(nc.Matrix(1, 2, [1, 1]), nc_mat[0:2:1])
 
     def test_1d_invalid_access(self):
         _, nc_mat = dp_nc_matrix(1, 3, 1)
@@ -168,7 +164,6 @@ class TestSubscript(TestCase):
         self.assertRaises(TypeError, lambda: nc_mat[0:2, 0:2])
 
         # raise ValueError if slice step size != 1, or length of slice < 1
-        cmp_dp_nc_matrix(nc.Matrix(1, 2, [1, 1]), nc_mat[0:2:1])
         self.assertRaises(ValueError, lambda: nc_mat[0:3:2])
         self.assertRaises(ValueError, lambda: nc_mat[0:0])
 
@@ -185,12 +180,6 @@ class TestSubscript(TestCase):
         # the key could be a tuple of two ints/slices
         self.assertEqual(nc_mat[1, 2], 6)
         cmp_dp_nc_matrix(nc.Matrix([[1, 2], [4, 5]]), nc_mat[0:2, 0:2])
-
-        # check modifications to sliced mat will/won't show in original mat
-        # nc_mat[0] = [10, 10, 10]
-        # cmp_dp_nc_matrix(nc.Matrix(2, 3, [[10, 10, 10], [4, 5, 6]]), nc_mat)
-        # nc_mat[0][0] = 100
-        # cmp_dp_nc_matrix(nc.Matrix(2, 3, [[10, 10, 10], [4, 5, 6]]), nc_mat)
 
         # return a number if the resulting slice is 1 by 1
         self.assertEqual(nc_mat[1][0], 4)
