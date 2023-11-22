@@ -234,11 +234,11 @@ class TestSetSubscript(TestCase):
         # invalid keys for errors showed in subscript function
         # raise TypeError if not an integer or a slice
         with self.assertRaises(TypeError):
-            nc_mat[1.0] = 10;
+            nc_mat[1.0] = 10
         with self.assertRaises(TypeError):
-            nc_mat[1, 1] = 10;
+            nc_mat[1, 1] = 10
         with self.assertRaises(TypeError):
-            nc_mat[0:2, 0:2] = 10;
+            nc_mat[0:2, 0:2] = 10
 
         # raise ValueError if slice step size != 1, or length of slice < 1
         with self.assertRaises(ValueError):
