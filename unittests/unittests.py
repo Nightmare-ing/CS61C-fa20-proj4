@@ -210,4 +210,170 @@ class TestSubscript(TestCase):
         cmp_dp_nc_matrix(nc.Matrix([[4, 5, 6]]), nc_mat[1, 0:100])
 
 
+class TestSetSubscript(TestCase):
+    def test_1d_valid_set(self):
+        _, nc_mat = dp_nc_matrix(1, 3, 1)
 
+        # test single int key to set
+        nc_mat[2] = 99
+        cmp_dp_nc_matrix(nc.Matrix([[1, 1, 99]]), nc_mat)
+
+        # test slice key to set
+        nc_mat[0:2] = [99, 100]
+        cmp_dp_nc_matrix(nc.Matrix([[99, 100, 1]]), nc_mat)
+        nc_mat[0:1] = 101
+        cmp_dp_nc_matrix(nc.Matrix([[101, 100, 1]]), nc_mat)
+        nc_mat[1:3:1] = [77, 66]
+        cmp_dp_nc_matrix(nc.Matrix([[99, 77, 66]]), nc_mat)
+        nc_mat[1] = 99.0
+        cmp_dp_nc_matrix(nc.Matrix([[99, 99, 66]]), nc_mat)
+
+    def test_1d_invalid_set(self):
+        _, nc_mat = dp_nc_matrix(1, 3, 1)
+
+        # invalid keys for errors showed in subscript function
+        # raise TypeError if not an integer or a slice
+        with self.assertRaises(TypeError):
+            nc_mat[1.0] = 10;
+        with self.assertRaises(TypeError):
+            nc_mat[1, 1] = 10;
+        with self.assertRaises(TypeError):
+            nc_mat[0:2, 0:2] = 10;
+
+        # raise ValueError if slice step size != 1, or length of slice < 1
+        with self.assertRaises(ValueError):
+            nc_mat[0:3:2] = [1, 1]
+        with self.assertRaises(ValueError):
+            nc_mat[0:0] = 10
+
+        # IndexError if index out of bounds
+        with self.assertRaises(IndexError):
+            nc_mat[10] = 100
+
+        # additional errors for set_subscript function
+        # slice is 1 by 1, but v is not an int/float
+        with self.assertRaises(TypeError):
+            nc_mat[1] = [1, 2, 3]
+        with self.assertRaises(TypeError):
+            nc_mat[0:1] = [1, 2, 3]
+        with self.assertRaises(TypeError):
+            nc_mat[0:1:1] = [1, 2, 3]
+
+        # slice is not 1 by 1, but v is not a list
+        with self.assertRaises(TypeError):
+            nc_mat[1:3] = 10
+
+        # resulting slice is 1d,
+        # but v has wrong length
+        with self.assertRaises(ValueError):
+            nc_mat[1:3] = [1, 2, 3]
+        with self.assertRaises(ValueError):
+            nc_mat[1:3] = [1]
+
+        # but any elem of v is not int/float
+        with self.assertRaises(ValueError):
+            nc_mat[1:3] = [1, [1, 2, 3]]
+
+    def test_2d_valid_set(self):
+        _, nc_mat = dp_nc_matrix([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+
+        # the key could be an integer, a single slice
+        nc_mat[1] = [99, 100, 101]
+        cmp_dp_nc_matrix(nc.Matrix([[1, 2, 3], [99, 100, 101], [7, 8, 9]]), nc_mat)
+        nc_mat[0:2] = [[10, 11, 12], [13, 14, 15]]
+        cmp_dp_nc_matrix(nc.Matrix([[10, 11, 12], [13, 14, 15], [7, 8, 9]]), nc_mat)
+
+        # the key could be a tuple of two ints/slices
+        nc_mat[1, 2] = 88
+        cmp_dp_nc_matrix(nc.Matrix([[10, 11, 12], [13, 14, 88], [7, 8, 9]]), nc_mat)
+        nc_mat[0:2, 0:2] = [[1, 2], [3, 4]]
+        cmp_dp_nc_matrix(nc.Matrix([[1, 2, 12], [3, 4, 88], [7, 8, 9]]), nc_mat)
+        nc_mat[1][0] = 99
+        cmp_dp_nc_matrix(nc.Matrix([[1, 2, 12], [99, 4, 88], [7, 8, 9]]), nc_mat)
+        nc_mat[0:1, 0:1] = 77
+        cmp_dp_nc_matrix(nc.Matrix([[77, 2, 12], [99, 4, 88], [7, 8, 9]]), nc_mat)
+
+        # check modifications to sliced mat will/won't show in original mat
+        mat_slice = nc_mat[0]
+        mat_slice[:] = [10, 10, 10]
+        cmp_dp_nc_matrix(nc.Matrix([[10, 10, 10], [3, 4, 88], [7, 8, 9]]), nc_mat)
+        mat_slice[0][0] = 100
+        cmp_dp_nc_matrix(nc.Matrix([[100, 10, 10], [3, 4, 88], [7, 8, 9]]), nc_mat)
+
+    def test_2d_invalid_set(self):
+        _, nc_mat = dp_nc_matrix([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+
+        # Invalid keys for error showed in subscript function
+        # TypeError if not an integer, a slice or a length-2 tuple of slices/ints
+        with self.assertRaises(TypeError):
+            nc_mat[2.0] = 10
+        with self.assertRaises(TypeError):
+            nc_mat[1, 2, 3] = 10
+        with self.assertRaises(TypeError):
+            nc_mat[0:1, 1:2, 2:3] = 10
+
+        # ValueError if step size != 1, or length of slice < 1
+        with self.assertRaises(ValueError):
+            nc_mat[0:3:2] = [1, 2]
+        with self.assertRaises(ValueError):
+            nc_mat[0:2:1, 0:3:2] = [[1, 2], [3, 4]]
+        with self.assertRaises(ValueError):
+            nc_mat[0:2:2, 0:3:1] = [[1, 2, 3]]
+        with self.assertRaises(ValueError):
+            nc_mat[0:0, 0:1] = 10
+        with self.assertRaises(ValueError):
+            nc_mat[0:1, 1:1] = 10
+
+        # IndexError if key is an integer but out of range, or integer in tuple out of range
+        with self.assertRaises(IndexError):
+            nc_mat[10] = [1, 2, 3]
+        with self.assertRaises(IndexError):
+            nc_mat[1, 10] = 10
+        with self.assertRaises(IndexError):
+            nc_mat[10, 1] = 100
+        with self.assertRaises(IndexError):
+            nc_mat[10, 0:2] = [1, 2]
+        with self.assertRaises(IndexError):
+            nc_mat[0:2, 10] = [1, 2]
+        nc_mat[1, 0:100] = [99, 100, 101]
+        cmp_dp_nc_matrix(nc.Matrix([[1, 2, 3], [99, 100, 101], [7, 8, 9]]), nc_mat)
+
+        # Additional errors for set_subscript function
+        # Resulting slice is 1 by 1, but v is not a int/float
+        with self.assertRaises(TypeError):
+            nc_mat[1, 2] = [1, 2, 3]
+        with self.assertRaises(TypeError):
+            nc_mat[0:1, 0:1] = [1, 2, 3]
+
+        # slice is not 1 by 1, but v is not a list
+        with self.assertRaises(TypeError):
+            nc_mat[1] = 1.0
+        with self.assertRaises(TypeError):
+            nc_mat[0:2, 0:2] = 10
+        with self.assertRaises(TypeError):
+            nc_mat[0:2, 1] = 10
+
+        # resulting slice is 1d, but v has wrong length or not float/int elem
+        with self.assertRaises(ValueError):
+            nc_mat[1] = [0, 1, 2, 3, 4]
+        with self.assertRaises(ValueError):
+            nc_mat[1] = [0]
+        with self.assertRaises(ValueError):
+            nc_mat[1] = [0, 1, [1, 2, 3]]
+
+        # resulting slice is 2d, but v has wrong length, or any elem of v has wrong length, or any elem of v includes
+        # not float/int elem
+        with self.assertRaises(ValueError):
+            nc_mat[0:2, 0:2] = [[1, 2, 3]]
+        with self.assertRaises(ValueError):
+            nc_mat[0:2, 0:2] = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+        with self.assertRaises(ValueError):
+            nc_mat[0:2, 0:2] = [[1], [1, 2, 3]]
+        with self.assertRaises(ValueError):
+            nc_mat[0:2, 0:2] = [[1, 2, 3, 4], [1, 2, 3]]
+        with self.assertRaises(ValueError):
+            nc_mat[0:2, 0:2] = [[1, 2, 3], [4]]
+        with self.assertRaises(ValueError):
+            nc_mat[0:2, 0:2] = [[1, 2, 3], [4, 5, 6, 7]]
+        with self.assertRaises(ValueError):
+            nc_mat[0:2, 0:2] = [[1, 2, 3], [1, 2, [1, 2, 3]]]
