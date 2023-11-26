@@ -699,6 +699,45 @@ PyObject *matrix61c_from_slice(PyObject* slice, PyObject *slice1, Matrix61c *sou
 }
 
 /*
+ * Helper function: to get row_slice and col_slice from param index and index1
+ */
+
+void get_slices(Matrix61c *self, PyObject *index, PyObject *index1, PyObject **row_slice, PyObject **col_slice) {
+    // if only one index
+    if (index1 == NULL) {
+        // 1d matrix
+        if (self->mat->is_1d) {
+            if (self->mat->rows == 1) {
+                *row_slice = PySlice_New(PyLong_FromLong(0), PyLong_FromLong(1), PyLong_FromLong(1));
+                *col_slice = PySlice_Check(index) ?
+                            index :
+                            PySlice_New(index, PyNumber_Add(index, PyLong_FromLong(1)),
+                                        PyLong_FromLong(1));
+            } else {
+                *row_slice = PySlice_Check(index) ?
+                            index :
+                            PySlice_New(index, PyNumber_Add(index, PyLong_FromLong(1)),
+                                        PyLong_FromLong(1));
+                *col_slice = PySlice_New(PyLong_FromLong(0), PyLong_FromLong(1), PyLong_FromLong(1));
+            }
+        } else {
+            // 2d matrix
+            if (PyLong_Check(index)) {
+                int value = (int) PyLong_AsLong(index);
+                *row_slice = PySlice_New(PyLong_FromLong(value), PyLong_FromLong(value + 1), PyLong_FromLong(1));
+            } else {
+                *row_slice = index;
+            }
+            *col_slice = PySlice_New(PyLong_FromLong(0), PyLong_FromLong(self->mat->cols), PyLong_FromLong(1));
+        }
+    } else {
+        // if two indexes
+        *row_slice = PyLong_Check(index) ? convert_to_slice(index) : index;
+        *col_slice = PyLong_Check(index1) ? convert_to_slice(index1) : index1;
+    }
+}
+
+/*
  * Given a numc.Matrix `self`, index into it with `key`. Return the indexed result.
  */
 PyObject *Matrix61c_subscript(Matrix61c* self, PyObject* key) {
@@ -710,38 +749,7 @@ PyObject *Matrix61c_subscript(Matrix61c* self, PyObject* key) {
 
     PyObject *row_slice = NULL;
     PyObject *col_slice = NULL;
-    // if only one index
-    if (index1 == NULL) {
-        // 1d matrix
-        if (self->mat->is_1d) {
-            if (self->mat->rows == 1) {
-                row_slice = PySlice_New(PyLong_FromLong(0), PyLong_FromLong(1), PyLong_FromLong(1));
-                col_slice = PySlice_Check(index) ?
-                            index :
-                            PySlice_New(index, PyNumber_Add(index, PyLong_FromLong(1)),
-                                        PyLong_FromLong(1));
-            } else {
-                row_slice = PySlice_Check(index) ?
-                            index :
-                            PySlice_New(index, PyNumber_Add(index, PyLong_FromLong(1)),
-                                        PyLong_FromLong(1));
-                col_slice = PySlice_New(PyLong_FromLong(0), PyLong_FromLong(1), PyLong_FromLong(1));
-            }
-        } else {
-        // 2d matrix
-            if (PyLong_Check(index)) {
-                int value = (int) PyLong_AsLong(index);
-                row_slice = PySlice_New(PyLong_FromLong(value), PyLong_FromLong(value + 1), PyLong_FromLong(1));
-            } else {
-                row_slice = index;
-            }
-            col_slice = PySlice_New(PyLong_FromLong(0), PyLong_FromLong(self->mat->cols), PyLong_FromLong(1));
-        }
-    } else {
-        // if two indexes
-        row_slice = PyLong_Check(index) ? convert_to_slice(index) : index;
-        col_slice = PyLong_Check(index1) ? convert_to_slice(index1) : index1;
-    }
+    get_slices(self, index, index1, &row_slice, &col_slice);
 
     return matrix61c_from_slice(row_slice, col_slice, self);
 }
