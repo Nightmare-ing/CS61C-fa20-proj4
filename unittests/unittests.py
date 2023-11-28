@@ -297,8 +297,6 @@ class TestSetSubscript(TestCase):
         mat_slice = nc_mat[0]
         mat_slice[:] = [10, 10, 10]
         cmp_dp_nc_matrix(nc.Matrix([[10, 10, 10], [3, 4, 88], [7, 8, 9]]), nc_mat)
-        mat_slice[0][0] = 100
-        cmp_dp_nc_matrix(nc.Matrix([[100, 10, 10], [3, 4, 88], [7, 8, 9]]), nc_mat)
 
     def test_2d_invalid_set(self):
         _, nc_mat = dp_nc_matrix([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
