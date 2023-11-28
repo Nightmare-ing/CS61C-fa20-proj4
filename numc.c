@@ -756,136 +756,129 @@ PyObject *Matrix61c_subscript(Matrix61c *self, PyObject *key) {
 }
 
 /*
+ * Helper function: check whether the type is PyLong/PyFloat
+ * if check is passed, return 1, else return 0
+ */
+int PyFloat_PyLong_Check(PyObject *item) {
+    if (PyLong_Check(item) || PyFloat_Check(item)) {
+        return 1;
+    }
+    return 0;
+}
+
+int Custom_PyList_Check(PyObject *item) {
+    return PyList_Check(item);
+}
+
+/*
+ * Helper function: to check PyList length and elem type
+ * if check is passed, return 1, else return 0
+ */
+int PyList_Len_Elem_Check(PyObject *list, Py_ssize_t desired_len, int (*check_func)(PyObject *)) {
+    // length check
+    if (PyList_Size(list) != desired_len) {
+        PyErr_SetString(PyExc_TypeError, "resulting slice is not 1 by 1, but v has wrong length");
+        return 0;
+    }
+
+    // elem type check
+    for (Py_ssize_t i = 0; i < PyList_Size(list); ++i) {
+        if (!check_func(PyList_GetItem(list, i))) {
+            PyErr_SetString(PyExc_ValueError, "v has wrong type elements");
+            return 0;
+        }
+    }
+    return 1;
+}
+
+/*
+ * Helper function: to set value with row_slice, col_slice and the target value
+ */
+void set_matrix61c_from_slice(PyObject *row_slice, PyObject *col_slice, Matrix61c *source, PyObject *value) {
+    Py_ssize_t start = 0, stop = 0, step = 0, length = source->mat->rows, slice_length = 0;
+    Py_ssize_t start1 = 0, stop1 = 0, step1 = 0, length1 = source->mat->cols, slice_length1 = 0;
+
+    // extract slice
+    int extract_failed = extract_slice(row_slice, length, &start, &stop, &step, &slice_length) ||
+                         extract_slice(col_slice, length1, &start1, &stop1, &step1, &slice_length1);
+    if (extract_failed) {
+        return;
+    }
+
+    // value check
+    // if resulting slice is 1 by 1, but value is not a float/int
+    if (slice_length == 1 && slice_length1 == 1) {
+        if (!(PyLong_Check(value) || PyFloat_Check(value))) {
+            PyErr_SetString(PyExc_TypeError, "resulting slice is 1 by 1, but v is not a float/int");
+            return;
+        }
+
+        // set single value
+        set(source->mat, (int) start, (int) start1, PyFloat_AsDouble(value));
+    } else if (slice_length == 1 || slice_length1 == 1) {
+        // resulting slice is 1d, but value is not a list
+        if (!PyList_Check(value)) {
+            PyErr_SetString(PyExc_TypeError, "resulting slice is not 1 by 1, but v is not a list");
+            return;
+        }
+        // resulting slice is 1d, but v has wrong length, or wrong type elem
+        Py_ssize_t desired_list_size = slice_length != 1 ? slice_length : slice_length1;
+        if (!PyList_Len_Elem_Check(value, desired_list_size, PyFloat_PyLong_Check)) {
+            return;
+        }
+
+        // set value
+        if (slice_length == 1) {
+            for (Py_ssize_t i = 0; i < slice_length1; ++i) {
+                set(source->mat, (int) start, (int) (start1 + i), PyFloat_AsDouble(PyList_GetItem(value, i)));
+            }
+        } else {
+            for (Py_ssize_t i = 0; i < slice_length; ++i) {
+                set(source->mat, (int) (start + i), (int) start1, PyFloat_AsDouble(PyList_GetItem(value, i)));
+            }
+        }
+    } else {
+        // resulting slice is 2d
+        // v is not a list
+        if (!PyList_Check(value)) {
+            PyErr_SetString(PyExc_TypeError, "resulting slice is 2d, but v is not a list");
+            return;
+        }
+        // v has wrong length or has elem which is not a list
+        if (!PyList_Len_Elem_Check(value, slice_length, Custom_PyList_Check)) {
+            return;
+        }
+        // elem of v has wrong length or has elem which is not a list
+        for (Py_ssize_t i = 0; i < PyList_Size(value); ++i) {
+            if (!PyList_Len_Elem_Check(PyList_GetItem(value, i), slice_length1, PyFloat_PyLong_Check)) {
+                return;
+            }
+        }
+
+        // set value
+        for (Py_ssize_t i = 0; i < slice_length; ++i) {
+            for (Py_ssize_t j = 0; j < slice_length1; ++j) {
+                set(source->mat, (int) (start + i), (int) (start1 + j), PyFloat_AsDouble(PyList_GetItem(PyList_GetItem(value, i), j)));
+            }
+        }
+    }
+}
+
+/*
  * Given a numc.Matrix `self`, index into it with `key`, and set the indexed result to `v`.
  */
-int Matrix61c_set_subscript(Matrix61c* self, PyObject *key, PyObject *v) {
+int Matrix61c_set_subscript(Matrix61c *self, PyObject *key, PyObject *v) {
     PyObject *index = NULL;
     PyObject *index1 = NULL;
     if (check_keys(self, key, &index, &index1)) {
         return -1;
     }
 
-    // if the args are integers, convert to slice for uniform operation
-    PyObject *slice = convert_to_slice(index);
-    PyObject *slice1 = NULL;
-    if (!index1) {
-        slice1 = convert_to_slice(index1);
-    }
+    PyObject *row_slice = NULL;
+    PyObject *col_slice = NULL;
+    get_slices(self, index, index1, &row_slice, &col_slice);
 
-    Py_ssize_t start = 0, stop = 0, step = 0, length = 0, slice_length = 0;
-    Py_ssize_t start1 = 0, stop1 = 0, step1 = 0, length1 = 0, slice_length1 = 0;
-
-    if (self->mat->is_1d) {
-        length = self->mat->rows > 1 ? self->mat->rows + 1 : self->mat->cols + 1;
-        // if index is an integer, just need to set the value
-        if (PyLong_Check(index)) {
-            int value = (int) PyLong_AsLong(index);
-            if (value >= length) {
-                PyErr_SetString(PyExc_IndexError, "Index out of bounds");
-                return -1;
-            }
-            if (!PyFloat_Check(v)) {
-                PyErr_SetString(PyExc_TypeError, "v is not valid for 1D matrix with an integer to index");
-                return -1;
-            }
-            set(self->mat, 0, value, PyFloat_AsDouble(v));
-            return 0;
-        }
-
-        // if not, should set a list of value
-        if (extract_slice(slice, length, &start, &stop, &step, &slice_length)) {
-            if (!PyList_Check(v)) {
-                PyErr_SetString(PyExc_TypeError, "v is not valid for 1D matrix with a slice");
-                return -1;
-            }
-
-            if (length != PyList_Size(v)) {
-                PyErr_SetString(PyExc_ValueError, "v has wrong length");
-            }
-            for (int i = 0; i < PyList_Size(v); ++i) {
-                PyObject *item = PyList_GetItem(v, (Py_ssize_t) i);
-                if (!(PyLong_Check(item) || PyFloat_Check(item))) {
-                    PyErr_SetString(PyExc_ValueError, "some element of v is not a float or int");
-                    return -1;
-                }
-            }
-
-            for (Py_ssize_t i = start; i < stop; i += step) {
-                set(self->mat, 0, (int) i, PyFloat_AsDouble(PyList_GetItem(v, i)));
-            }
-            return 0;
-        }
-    } else {
-        length = self->mat->rows + 1;
-        length1 = self->mat->cols + 1;
-        // if two index are integer, just set the value
-        if (PyLong_Check(index) && PyLong_Check(index1)) {
-            int row = (int) PyLong_AsLong(index);
-            int col = (int) PyLong_AsLong(index1);
-            if (row >= length || col > length1) {
-                PyErr_SetString(PyExc_IndexError, "Index out of bounds");
-            }
-            if (!PyFloat_Check(v)) {
-                PyErr_SetString(PyExc_TypeError, "v is not valid for 2D matrix with two integers");
-                return -1;
-            }
-            set(self->mat, (int) row, (int) col, PyFloat_AsDouble(v));
-            return 0;
-        }
-
-        // if not, should return a new matrix which inherits part of its parent's data
-        if (extract_slice(slice, length, &start, &stop, &step, &slice_length) ||
-            extract_slice(slice1, length1, &start1, &stop1, &step1, &slice_length1)) {
-            if (slice_length == 1 && slice_length1 == 1) {
-                if (!(PyLong_Check(v) || PyFloat_Check(v))) {
-                    PyErr_SetString(PyExc_TypeError, "v is not valid for 1 by 1 slice");
-                    return -1;
-                }
-            } else {
-                if (!PyList_Check(v)) {
-                    PyErr_SetString(PyExc_TypeError, "v is not valid for not 1 by 1 slice");
-                    return -1;
-                }
-            }
-
-            if (length == 1) {
-                if (length1 != PyList_Size(v)) {
-                    PyErr_SetString(PyExc_ValueError, "v has the wrong length");
-                }
-                for (int i = 0; i < PyList_Size(v); ++i) {
-                    PyObject *item = PyList_GetItem(v, (Py_ssize_t) i);
-                    if (!(PyLong_Check(item) || PyFloat_Check(item))) {
-                        PyErr_SetString(PyExc_ValueError, "some element of v is not a float or int");
-                        return -1;
-                    }
-                }
-            } else {
-                if (length != PyList_Size(v)) {
-                    PyErr_SetString(PyExc_TypeError, "v has wrong number of items");
-                }
-                for (int i = 0; i < PyList_Size(v); ++i) {
-                    PyObject *item_list = PyList_GetItem(v, (Py_ssize_t) i);
-                    if (length1 != PyList_Size(item_list) || !PyList_Check(item_list)) {
-                        PyErr_SetString(PyExc_ValueError, "v has wrong number of items or is not a list");
-                    }
-                    for (int j = 0; j < PyList_Size(item_list); ++j) {
-                        PyObject *item = PyList_GetItem(item_list, (Py_ssize_t) j);
-                        if (!PyLong_Check(item) || PyFloat_Check(item)) {
-                            PyErr_SetString(PyExc_ValueError, "some element of v is not a float or int");
-                            return -1;
-                        }
-                    }
-                }
-            }
-
-            for (Py_ssize_t i = start; i < stop; i += step) {
-                for (Py_ssize_t j = start1; j < stop; j += step1) {
-                    set(self->mat, (int) i, (int) j,
-                        PyFloat_AsDouble(PyList_GetItem(PyList_GetItem(v, (Py_ssize_t) i), (Py_ssize_t) j)));
-                }
-            }
-        }
-    }
+    set_matrix61c_from_slice(row_slice, col_slice, self, v);
     return 0;
 }
 
