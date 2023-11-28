@@ -794,7 +794,7 @@ int PyList_Len_Elem_Check(PyObject *list, Py_ssize_t desired_len, int (*check_fu
 /*
  * Helper function: to set value with row_slice, col_slice and the target value
  */
-void set_matrix61c_from_slice(PyObject *row_slice, PyObject *col_slice, Matrix61c *source, PyObject *value) {
+int set_matrix61c_from_slice(PyObject *row_slice, PyObject *col_slice, Matrix61c *source, PyObject *value) {
     Py_ssize_t start = 0, stop = 0, step = 0, length = source->mat->rows, slice_length = 0;
     Py_ssize_t start1 = 0, stop1 = 0, step1 = 0, length1 = source->mat->cols, slice_length1 = 0;
 
@@ -802,7 +802,7 @@ void set_matrix61c_from_slice(PyObject *row_slice, PyObject *col_slice, Matrix61
     int extract_failed = extract_slice(row_slice, length, &start, &stop, &step, &slice_length) ||
                          extract_slice(col_slice, length1, &start1, &stop1, &step1, &slice_length1);
     if (extract_failed) {
-        return;
+        return -1;
     }
 
     // value check
@@ -810,7 +810,7 @@ void set_matrix61c_from_slice(PyObject *row_slice, PyObject *col_slice, Matrix61
     if (slice_length == 1 && slice_length1 == 1) {
         if (!(PyLong_Check(value) || PyFloat_Check(value))) {
             PyErr_SetString(PyExc_TypeError, "resulting slice is 1 by 1, but v is not a float/int");
-            return;
+            return -1;
         }
 
         // set single value
@@ -819,12 +819,12 @@ void set_matrix61c_from_slice(PyObject *row_slice, PyObject *col_slice, Matrix61
         // resulting slice is 1d, but value is not a list
         if (!PyList_Check(value)) {
             PyErr_SetString(PyExc_TypeError, "resulting slice is not 1 by 1, but v is not a list");
-            return;
+            return -1;
         }
         // resulting slice is 1d, but v has wrong length, or wrong type elem
         Py_ssize_t desired_list_size = slice_length != 1 ? slice_length : slice_length1;
         if (!PyList_Len_Elem_Check(value, desired_list_size, PyFloat_PyLong_Check)) {
-            return;
+            return -1;
         }
 
         // set value
@@ -842,16 +842,16 @@ void set_matrix61c_from_slice(PyObject *row_slice, PyObject *col_slice, Matrix61
         // v is not a list
         if (!PyList_Check(value)) {
             PyErr_SetString(PyExc_TypeError, "resulting slice is 2d, but v is not a list");
-            return;
+            return -1;
         }
         // v has wrong length or has elem which is not a list
         if (!PyList_Len_Elem_Check(value, slice_length, Custom_PyList_Check)) {
-            return;
+            return -1;
         }
         // elem of v has wrong length or has elem which is not a list
         for (Py_ssize_t i = 0; i < PyList_Size(value); ++i) {
             if (!PyList_Len_Elem_Check(PyList_GetItem(value, i), slice_length1, PyFloat_PyLong_Check)) {
-                return;
+                return -1;
             }
         }
 
@@ -862,6 +862,7 @@ void set_matrix61c_from_slice(PyObject *row_slice, PyObject *col_slice, Matrix61
             }
         }
     }
+    return 0;
 }
 
 /*
@@ -878,7 +879,10 @@ int Matrix61c_set_subscript(Matrix61c *self, PyObject *key, PyObject *v) {
     PyObject *col_slice = NULL;
     get_slices(self, index, index1, &row_slice, &col_slice);
 
-    set_matrix61c_from_slice(row_slice, col_slice, self, v);
+    int set_failed = set_matrix61c_from_slice(row_slice, col_slice, self, v);
+    if (set_failed) {
+        return -1;
+    }
     return 0;
 }
 
