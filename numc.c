@@ -3,6 +3,31 @@
 
 PyTypeObject Matrix61cType;
 
+/*
+ * Helper functions for subsctipt and set_subscript function
+ */
+PyObject *convert_to_slice(PyObject *index);
+
+int inbounds_check(PyObject *value, int bounds);
+
+int check_keys(Matrix61c *self, PyObject *key, PyObject **index, PyObject **index1);
+
+int extract_slice(PyObject *slice, Py_ssize_t length,
+                  Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step, Py_ssize_t *slice_length);
+
+PyObject *matrix61c_from_slice(PyObject *slice, PyObject *slice1, Matrix61c *source);
+
+void get_slices(Matrix61c *self, PyObject *index, PyObject *index1, PyObject **row_slice, PyObject **col_slice);
+
+int PyFloat_PyLong_Check(PyObject *item);
+
+int Custom_PyList_Check(PyObject *item);
+
+int PyList_Len_Elem_Check(PyObject *list, Py_ssize_t desired_len, int (*check_func)(PyObject *));
+
+int set_matrix61c_from_slice(PyObject *row_slice, PyObject *col_slice, Matrix61c *source, PyObject *value);
+
+
 /* Helper functions for initalization of matrices and vectors */
 
 /*
@@ -598,6 +623,108 @@ PyMethodDef Matrix61c_methods[] = {
 /* INDEXING */
 
 /*
+ * Given a numc.Matrix `self`, index into it with `key`. Return the indexed result.
+ */
+PyObject *Matrix61c_subscript(Matrix61c *self, PyObject *key) {
+    PyObject *index = NULL;
+    PyObject *index1 = NULL;
+    if (check_keys(self, key, &index, &index1)) {
+        return NULL;
+    }
+
+    PyObject *row_slice = NULL;
+    PyObject *col_slice = NULL;
+    get_slices(self, index, index1, &row_slice, &col_slice);
+
+    return matrix61c_from_slice(row_slice, col_slice, self);
+}
+
+/*
+ * Given a numc.Matrix `self`, index into it with `key`, and set the indexed result to `v`.
+ */
+int Matrix61c_set_subscript(Matrix61c *self, PyObject *key, PyObject *v) {
+    PyObject *index = NULL;
+    PyObject *index1 = NULL;
+    if (check_keys(self, key, &index, &index1)) {
+        return -1;
+    }
+
+    PyObject *row_slice = NULL;
+    PyObject *col_slice = NULL;
+    get_slices(self, index, index1, &row_slice, &col_slice);
+
+    int set_failed = set_matrix61c_from_slice(row_slice, col_slice, self, v);
+    if (set_failed) {
+        return -1;
+    }
+    return 0;
+}
+
+PyMappingMethods Matrix61c_mapping = {
+        NULL,
+        (binaryfunc) Matrix61c_subscript,
+        (objobjargproc) Matrix61c_set_subscript,
+};
+
+/* INSTANCE ATTRIBUTES*/
+PyMemberDef Matrix61c_members[] = {
+        {
+                "shape", T_OBJECT_EX, offsetof(Matrix61c, shape), 0,
+                "(rows, cols)"
+        },
+        {NULL}  /* Sentinel */
+};
+
+PyTypeObject Matrix61cType = {
+        PyVarObject_HEAD_INIT(NULL, 0)
+        .tp_name = "numc.Matrix",
+        .tp_basicsize = sizeof(Matrix61c),
+        .tp_dealloc = (destructor) Matrix61c_dealloc,
+        .tp_repr = (reprfunc) Matrix61c_repr,
+        .tp_as_number = &Matrix61c_as_number,
+        .tp_flags = Py_TPFLAGS_DEFAULT |
+                    Py_TPFLAGS_BASETYPE,
+        .tp_doc = "numc.Matrix objects",
+        .tp_methods = Matrix61c_methods,
+        .tp_members = Matrix61c_members,
+        .tp_as_mapping = &Matrix61c_mapping,
+        .tp_init = (initproc) Matrix61c_init,
+        .tp_new = Matrix61c_new
+};
+
+
+struct PyModuleDef numcmodule = {
+        PyModuleDef_HEAD_INIT,
+        "numc",
+        "Numc matrix operations",
+        -1,
+        Matrix61c_class_methods
+};
+
+/* Initialize the numc module */
+PyMODINIT_FUNC PyInit_numc(void) {
+    PyObject *m;
+
+    if (PyType_Ready(&Matrix61cType) < 0)
+        return NULL;
+
+    m = PyModule_Create(&numcmodule);
+    if (m == NULL)
+        return NULL;
+
+    Py_INCREF(&Matrix61cType);
+    PyModule_AddObject(m, "Matrix", (PyObject *) &Matrix61cType);
+    printf("CS61C Fall 2020 Project 4: numc imported!\n");
+    fflush(stdout);
+    return m;
+}
+
+
+/*
+ * Helper functions for subscript and set_subscript function
+ */
+
+/*
  * Helper function: if a index has two possible types, integer or slice, change it to one type(slice)
  * for convenience.
 */
@@ -621,7 +748,6 @@ int inbounds_check(PyObject *value, int bounds) {
     }
     return 1;
 }
-
 
 /*
  * Helper function, to check whether the slice or ints in key are valid
@@ -739,23 +865,6 @@ void get_slices(Matrix61c *self, PyObject *index, PyObject *index1, PyObject **r
 }
 
 /*
- * Given a numc.Matrix `self`, index into it with `key`. Return the indexed result.
- */
-PyObject *Matrix61c_subscript(Matrix61c *self, PyObject *key) {
-    PyObject *index = NULL;
-    PyObject *index1 = NULL;
-    if (check_keys(self, key, &index, &index1)) {
-        return NULL;
-    }
-
-    PyObject *row_slice = NULL;
-    PyObject *col_slice = NULL;
-    get_slices(self, index, index1, &row_slice, &col_slice);
-
-    return matrix61c_from_slice(row_slice, col_slice, self);
-}
-
-/*
  * Helper function: check whether the type is PyLong/PyFloat
  * if check is passed, return 1, else return 0
  */
@@ -858,89 +967,10 @@ int set_matrix61c_from_slice(PyObject *row_slice, PyObject *col_slice, Matrix61c
         // set value
         for (Py_ssize_t i = 0; i < slice_length; ++i) {
             for (Py_ssize_t j = 0; j < slice_length1; ++j) {
-                set(source->mat, (int) (start + i), (int) (start1 + j), PyFloat_AsDouble(PyList_GetItem(PyList_GetItem(value, i), j)));
+                set(source->mat, (int) (start + i), (int) (start1 + j),
+                    PyFloat_AsDouble(PyList_GetItem(PyList_GetItem(value, i), j)));
             }
         }
     }
     return 0;
-}
-
-/*
- * Given a numc.Matrix `self`, index into it with `key`, and set the indexed result to `v`.
- */
-int Matrix61c_set_subscript(Matrix61c *self, PyObject *key, PyObject *v) {
-    PyObject *index = NULL;
-    PyObject *index1 = NULL;
-    if (check_keys(self, key, &index, &index1)) {
-        return -1;
-    }
-
-    PyObject *row_slice = NULL;
-    PyObject *col_slice = NULL;
-    get_slices(self, index, index1, &row_slice, &col_slice);
-
-    int set_failed = set_matrix61c_from_slice(row_slice, col_slice, self, v);
-    if (set_failed) {
-        return -1;
-    }
-    return 0;
-}
-
-PyMappingMethods Matrix61c_mapping = {
-        NULL,
-        (binaryfunc) Matrix61c_subscript,
-        (objobjargproc) Matrix61c_set_subscript,
-};
-
-/* INSTANCE ATTRIBUTES*/
-PyMemberDef Matrix61c_members[] = {
-        {
-                "shape", T_OBJECT_EX, offsetof(Matrix61c, shape), 0,
-                "(rows, cols)"
-        },
-        {NULL}  /* Sentinel */
-};
-
-PyTypeObject Matrix61cType = {
-        PyVarObject_HEAD_INIT(NULL, 0)
-        .tp_name = "numc.Matrix",
-        .tp_basicsize = sizeof(Matrix61c),
-        .tp_dealloc = (destructor) Matrix61c_dealloc,
-        .tp_repr = (reprfunc) Matrix61c_repr,
-        .tp_as_number = &Matrix61c_as_number,
-        .tp_flags = Py_TPFLAGS_DEFAULT |
-                    Py_TPFLAGS_BASETYPE,
-        .tp_doc = "numc.Matrix objects",
-        .tp_methods = Matrix61c_methods,
-        .tp_members = Matrix61c_members,
-        .tp_as_mapping = &Matrix61c_mapping,
-        .tp_init = (initproc) Matrix61c_init,
-        .tp_new = Matrix61c_new
-};
-
-
-struct PyModuleDef numcmodule = {
-        PyModuleDef_HEAD_INIT,
-        "numc",
-        "Numc matrix operations",
-        -1,
-        Matrix61c_class_methods
-};
-
-/* Initialize the numc module */
-PyMODINIT_FUNC PyInit_numc(void) {
-    PyObject *m;
-
-    if (PyType_Ready(&Matrix61cType) < 0)
-        return NULL;
-
-    m = PyModule_Create(&numcmodule);
-    if (m == NULL)
-        return NULL;
-
-    Py_INCREF(&Matrix61cType);
-    PyModule_AddObject(m, "Matrix", (PyObject *) &Matrix61cType);
-    printf("CS61C Fall 2020 Project 4: numc imported!\n");
-    fflush(stdout);
-    return m;
 }
