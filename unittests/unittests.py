@@ -17,11 +17,11 @@ class TestAdd(TestCase):
 
         # TypeError if b is not of type numc.Matrix
         with self.assertRaises(TypeError):
-            cmp_dp_nc_matrix(nc.Matrix([[2, 4, 6], [4, 10, 12]]), nc_mat1 + 1)
+            result = nc_mat1 + 1
 
         # ValueError if a and b don't have the same dim
         with self.assertRaises(ValueError):
-            cmp_dp_nc_matrix(nc.Matrix([[2, 4, 6], [4, 10, 12]]), nc_mat1 + nc.Matrix([1, 2, 3]))
+            result = nc_mat1 + nc.Matrix([1, 2, 3])
 
     def test_small_add(self):
         # TODO: YOUR CODE HERE
@@ -48,11 +48,11 @@ class TestSub(TestCase):
 
         # TypeError if b is not of type numc.Matrix
         with self.assertRaises(TypeError):
-            cmp_dp_nc_matrix(nc.Matrix([[2, 4, 6], [4, 10, 12]]), nc_mat1 - 1)
+            result = nc_mat1 - 1
 
         # ValueError if a and b don't have the same dim
         with self.assertRaises(ValueError):
-            cmp_dp_nc_matrix(nc.Matrix([[2, 4, 6], [4, 10, 12]]), nc_mat1 - nc.Matrix([1, 2, 3]))
+            result = nc_mat1 - nc.Matrix([1, 2, 3])
 
     def test_small_sub(self):
         # TODO: YOUR CODE HERE
