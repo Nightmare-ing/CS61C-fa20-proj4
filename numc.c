@@ -777,7 +777,7 @@ int Custom_PyList_Check(PyObject *item) {
 int PyList_Len_Elem_Check(PyObject *list, Py_ssize_t desired_len, int (*check_func)(PyObject *)) {
     // length check
     if (PyList_Size(list) != desired_len) {
-        PyErr_SetString(PyExc_TypeError, "resulting slice is not 1 by 1, but v has wrong length");
+        PyErr_SetString(PyExc_ValueError, "resulting slice is not 1 by 1, but v has wrong length");
         return 0;
     }
 
