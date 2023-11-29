@@ -348,11 +348,7 @@ PyObject *Matrix61c_add(Matrix61c *self, PyObject *args) {
  * self, and the second operand can be obtained by casting `args`.
  */
 PyObject *Matrix61c_sub(Matrix61c *self, PyObject *args) {
-    PyObject *mat = NULL;
-    if (PyArg_UnpackTuple(args, "args", 1, 1, &mat)) {
-        PyErr_SetString(PyExc_TypeError, "Invalid arguments");
-        return NULL;
-    }
+    PyObject *mat = args;
     if (!PyObject_TypeCheck(mat, &Matrix61cType)) {
         PyErr_SetString(PyExc_TypeError, "Argument must of type numc.Matrix!");
         return NULL;
