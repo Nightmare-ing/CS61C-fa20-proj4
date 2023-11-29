@@ -125,7 +125,7 @@ class TestMul(TestCase):
         with self.assertRaises(TypeError):
             result = nc_mat1 * 1
 
-        # ValueError if a and b don't have the same dim
+        # ValueError if the dim not match
         with self.assertRaises(ValueError):
             result = nc_mat1 * nc.Matrix([1, 2, 3])
 
@@ -147,6 +147,23 @@ class TestMul(TestCase):
 
 
 class TestPow(TestCase):
+    def test_func(self):
+        _, nc_mat1 = dp_nc_matrix([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        _, nc_mat2 = dp_nc_matrix([[1, 2, 3], [4, 5, 6]])
+        cmp_dp_nc_matrix(nc.Matrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]]), nc_mat1 ** 0)
+        cmp_dp_nc_matrix(nc.Matrix([[468, 576, 684], [1062, 1305, 1543], [1656, 2034, 2412]]), nc_mat1 ** 3)
+        cmp_dp_nc_matrix(nc.Matrix([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), nc_mat1)
+
+        # TypeError if b is not of type numc.Matrix
+        with self.assertRaises(TypeError):
+            result = nc_mat1 ** 1.0
+
+        # ValueError if pow is negative, or a is not a square matrix
+        with self.assertRaises(ValueError):
+            result = nc_mat1 ** -1
+        with self.assertRaises(ValueError):
+            result = nc_mat2 ** 3
+
     def test_small_pow(self):
         # TODO: YOUR CODE HERE
         dp_mat, nc_mat = rand_dp_nc_matrix(2, 2, seed=0)
