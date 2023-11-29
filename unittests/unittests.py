@@ -9,6 +9,20 @@ Hint: use dp_mc_matrix to generate dumbpy and numc matrices with the same data a
 
 
 class TestAdd(TestCase):
+    def test_func(self):
+        # valid input
+        _, nc_mat1 = dp_nc_matrix([[1, 2, 3], [4, 5, 6]])
+        _, nc_mat2 = dp_nc_matrix([[1, 2, 3], [4, 5, 6]])
+        cmp_dp_nc_matrix(nc.Matrix([[2, 4, 6], [4, 10, 12]]), nc_mat1 + nc_mat2)
+
+        # TypeError if b is not of type numc.Matrix
+        with self.assertRaises(TypeError):
+            cmp_dp_nc_matrix(nc.Matrix([[2, 4, 6], [4, 10, 12]]), nc_mat1 + 1)
+
+        # ValueError if a and b don't have the same dim
+        with self.assertRaises(ValueError):
+            cmp_dp_nc_matrix(nc.Matrix([[2, 4, 6], [4, 10, 12]]), nc_mat1 + nc.Matrix([1, 2, 3]))
+
     def test_small_add(self):
         # TODO: YOUR CODE HERE
         dp_mat1, nc_mat1 = rand_dp_nc_matrix(2, 2, seed=0)
