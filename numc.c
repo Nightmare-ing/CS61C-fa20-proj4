@@ -384,11 +384,7 @@ PyObject *Matrix61c_sub(Matrix61c *self, PyObject *args) {
  * can be obtained by casting `args`.
  */
 PyObject *Matrix61c_multiply(Matrix61c *self, PyObject *args) {
-    PyObject *mat = NULL;
-    if (PyArg_UnpackTuple(args, "args", 1, 1, &mat)) {
-        PyErr_SetString(PyExc_TypeError, "Invalid arguments");
-        return NULL;
-    }
+    PyObject *mat = args;
     if (!PyObject_TypeCheck(mat, &Matrix61cType)) {
         PyErr_SetString(PyExc_TypeError, "Argument must of type numc.Matrix!");
         return NULL;
@@ -397,7 +393,7 @@ PyObject *Matrix61c_multiply(Matrix61c *self, PyObject *args) {
 
     Matrix61c *result = (Matrix61c *) Matrix61c_new(&Matrix61cType, NULL, NULL);
     matrix *result_mat = NULL;
-    int alloc_failed = allocate_matrix(&result_mat, self->mat->rows, self->mat->cols);
+    int alloc_failed = allocate_matrix(&result_mat, self->mat->rows, mat61c->mat->cols);
     if (alloc_failed) {
         PyErr_SetString(PyExc_RuntimeError, "Alloc failed");
         return NULL;
