@@ -72,6 +72,11 @@ class TestSub(TestCase):
 
 
 class TestAbs(TestCase):
+    def test_func(self):
+        _, nc_mat1 = dp_nc_matrix([[1, -2, 3], [-4, 5, -6]])
+        cmp_dp_nc_matrix(nc.Matrix([[1, 2, 3], [4, 5, 6]]), abs(nc_mat1))
+        cmp_dp_nc_matrix(nc.Matrix([[1, -2, 3], [-4, 5, -6]]), nc_mat1)
+
     def test_small_abs(self):
         # TODO: YOUR CODE HERE
         dp_mat, nc_mat = rand_dp_nc_matrix(2, 2, seed=0)
