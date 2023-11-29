@@ -546,7 +546,7 @@ PyObject *Matrix61c_set_value(Matrix61c *self, PyObject *args) {
 PyObject *Matrix61c_get_value(Matrix61c *self, PyObject *args) {
     PyObject *row = NULL;
     PyObject *col = NULL;
-    if (PyArg_UnpackTuple(args, "args", 2, 2, &row, &col) ||
+    if (!PyArg_UnpackTuple(args, "args", 2, 2, &row, &col) ||
         !(row && col) ||
         !(PyLong_Check(row) && PyLong_Check(col))) {
         PyErr_SetString(PyExc_TypeError, "Invalid arguments");

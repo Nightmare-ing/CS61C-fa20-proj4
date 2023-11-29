@@ -185,7 +185,29 @@ class TestPow(TestCase):
     #     pass
 
 
-# class TestGet(TestCase):
+class TestGet(TestCase):
+    def test_get(self):
+        # valid input
+        _, nc_mat = dp_nc_matrix([[1, 2, 3], [4, 5, 6]])
+        print(nc_mat.get(1, 1))
+        cmp_dp_nc_matrix(nc.Matrix([[1, 2, 3], [4, 5, 6]]), nc_mat)
+
+        # TypeError if number of args is not 2, if i or j are not ints
+        with self.assertRaises(TypeError):
+            nc_mat.get(1, 1, 1)
+        with self.assertRaises(TypeError):
+            nc_mat.get(1.0, 1)
+        with self.assertRaises(TypeError):
+            nc_mat.get(1, 1.0)
+
+        # IndexError if i or j or both are out of range
+        with self.assertRaises(IndexError):
+            nc_mat.get(10, 1)
+        with self.assertRaises(IndexError):
+            nc_mat.get(1, 10)
+        with self.assertRaises(IndexError):
+            nc_mat.get(10, 10)
+
     # def test_get(self):
     #     # TODO: YOUR CODE HERE
     #     dp_mat, nc_mat = rand_dp_nc_matrix(2, 2, seed=0)
