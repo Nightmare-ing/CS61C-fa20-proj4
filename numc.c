@@ -517,7 +517,7 @@ PyObject *Matrix61c_set_value(Matrix61c *self, PyObject *args) {
     PyObject *row = NULL;
     PyObject *col = NULL;
     PyObject *val = NULL;
-    if (PyArg_UnpackTuple(args, "args", 3, 3, &row, &col, &val) ||
+    if (!PyArg_UnpackTuple(args, "args", 3, 3, &row, &col, &val) ||
         !(row && col && val && PyLong_Check(row) && PyLong_Check(col) &&
           (PyLong_Check(val) || PyFloat_Check(val)))) {
         PyErr_SetString(PyExc_TypeError, "Invalid arguments");
