@@ -3,31 +3,6 @@
 
 PyTypeObject Matrix61cType;
 
-/*
- * Helper functions for subsctipt and set_subscript function
- */
-PyObject *convert_to_slice(PyObject *index);
-
-int inbounds_check(PyObject *value, int bounds);
-
-int check_keys(Matrix61c *self, PyObject *key, PyObject **index, PyObject **index1);
-
-int extract_slice(PyObject *slice, Py_ssize_t length,
-                  Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step, Py_ssize_t *slice_length);
-
-PyObject *matrix61c_from_slice(PyObject *slice, PyObject *slice1, Matrix61c *source);
-
-void get_slices(Matrix61c *self, PyObject *index, PyObject *index1, PyObject **row_slice, PyObject **col_slice);
-
-int PyFloat_PyLong_Check(PyObject *item);
-
-int Custom_PyList_Check(PyObject *item);
-
-int PyList_Len_Elem_Check(PyObject *list, Py_ssize_t desired_len, int (*check_func)(PyObject *));
-
-int set_matrix61c_from_slice(PyObject *row_slice, PyObject *col_slice, Matrix61c *source, PyObject *value);
-
-
 /* Helper functions for initalization of matrices and vectors */
 
 /*
@@ -329,7 +304,6 @@ PyObject *Matrix61c_add(Matrix61c *self, PyObject *args) {
 
     int error_code = add_matrix(result_mat, self->mat, mat61c->mat);
     if (error_code != 0) {
-        free(result_mat);
         if (error_code == -2) {
             PyErr_SetString(PyExc_ValueError, "Matrices have different dimensions");
         } else if (error_code == -3) {
@@ -365,7 +339,6 @@ PyObject *Matrix61c_sub(Matrix61c *self, PyObject *args) {
 
     int error_code = sub_matrix(result_mat, self->mat, mat61c->mat);
     if (error_code != 0) {
-        free(result_mat);
         if (error_code == -2) {
             PyErr_SetString(PyExc_ValueError, "Matrices have different dimensions!");
         } else if (error_code == -3) {
@@ -401,7 +374,6 @@ PyObject *Matrix61c_multiply(Matrix61c *self, PyObject *args) {
 
     int error_code = mul_matrix(result_mat, self->mat, mat61c->mat);
     if (error_code != 0) {
-        free(result_mat);
         if (error_code == -2) {
             PyErr_SetString(PyExc_ValueError, "matrices dimension not match");
         } else if (error_code == -3) {
@@ -429,7 +401,6 @@ PyObject *Matrix61c_neg(Matrix61c *self) {
 
     int error_code = neg_matrix(result_mat, self->mat);
     if (error_code == -2) {
-        free(result_mat);
         PyErr_SetString(PyExc_RuntimeError, "Internal error: Result matrix dimension not match");
         return NULL;
     }
@@ -452,7 +423,6 @@ PyObject *Matrix61c_abs(Matrix61c *self) {
 
     int error_code = abs_matrix(result_mat, self->mat);
     if (error_code == -2) {
-        free(result_mat);
         PyErr_SetString(PyExc_RuntimeError, "Internal error: Result matrix dimension not match");
         return NULL;
     }
@@ -481,7 +451,6 @@ PyObject *Matrix61c_pow(Matrix61c *self, PyObject *pow, PyObject *optional) {
 
     int error_code = pow_matrix(mat, self->mat, pow_num);
     if (error_code != 0) {
-        free(mat);
         if (error_code == -2) {
             PyErr_SetString(PyExc_ValueError, "pow is negative or the matrix is not a square matrix");
         } else if (error_code == -3) {
