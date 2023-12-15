@@ -40,10 +40,16 @@ double rand_double(double low, double high) {
  */
 void rand_matrix(matrix *result, unsigned int seed, double low, double high) {
     srand(seed);
-    for (int i = 0; i < result->rows; i++) {
-        for (int j = 0; j < result->cols; j++) {
-            set(result, i, j, rand_double(low, high));
-        }
+    int paralleled_index = result->rows * result->cols / 4 * 4;
+    __m256d rand_avx;
+    for (int i = 0; i < paralleled_index; i += 4) {
+        rand_avx = _mm256_set_pd(rand_double(low, high), rand_double(low, high), rand_double(low, high),
+                                         rand_double(low, high));
+        _mm256_storeu_pd(*(result->data) + i, rand_avx);
+    }
+    // handling tail
+    for (int i = paralleled_index; i < result->rows * result->cols; ++i) {
+        *(*(result->data) + i) = rand_double(low, high);
     }
 }
 
