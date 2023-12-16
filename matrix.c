@@ -311,10 +311,22 @@ int neg_matrix(matrix *result, matrix *mat) {
     if (result->rows != mat->rows || result->cols != mat->cols) {
         return -2;
     }
-    for (int i = 0; i < result->rows; ++i) {
-        for (int j = 0; j < result->cols; ++j) {
-            result->data[i][j] = -mat->data[i][j];
-        }
+    int paralleled_index = result->rows * result->cols / 16 * 16;
+    __m256d zero_avx = _mm256_set1_pd(0);
+    __m256d data0, data1, data2, data3;
+    for (int i = 0; i < paralleled_index; i += 16) {
+        data0 = _mm256_loadu_pd(*(mat->data) + i);
+        data1 = _mm256_loadu_pd(*(mat->data) + i + 4);
+        data2 = _mm256_loadu_pd(*(mat->data) + i + 8);
+        data3 = _mm256_loadu_pd(*(mat->data) + i + 12);
+        _mm256_storeu_pd(*(result->data) + i, _mm256_sub_pd(zero_avx, data0));
+        _mm256_storeu_pd(*(result->data) + i + 4, _mm256_sub_pd(zero_avx, data1));
+        _mm256_storeu_pd(*(result->data) + i + 8, _mm256_sub_pd(zero_avx, data2));
+        _mm256_storeu_pd(*(result->data) + i + 12, _mm256_sub_pd(zero_avx, data3));
+    }
+    // handling tail
+    for (int i = paralleled_index; i < mat->rows * mat->cols; ++i) {
+        *(*(result->data) + i) = - *(*(mat->data) + i);
     }
     return 0;
 }
