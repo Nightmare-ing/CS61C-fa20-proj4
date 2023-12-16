@@ -202,12 +202,21 @@ int add_matrix(matrix *result, matrix *mat1, matrix *mat2) {
     if (result->rows != mat1->rows || result->cols != mat1->cols) {
         return -3;
     }
-    int paralleled_index = result->rows * result->cols / 4 * 4;
-    __m256d avx_a, avx_b;
-    for (int i = 0; i < paralleled_index; i += 4) {
+    int paralleled_index = result->rows * result->cols / 16 * 16;
+    __m256d avx_a, avx_b, avx_c, avx_d, avx_e, avx_f, avx_g, avx_h;
+    for (int i = 0; i < paralleled_index; i += 16) {
         avx_a = _mm256_loadu_pd(*(mat1->data) + i);
         avx_b = _mm256_loadu_pd(*(mat2->data) + i);
+        avx_c = _mm256_loadu_pd(*(mat1->data) + i + 4);
+        avx_d = _mm256_loadu_pd(*(mat2->data) + i + 4);
+        avx_e = _mm256_loadu_pd(*(mat1->data) + i + 8);
+        avx_f = _mm256_loadu_pd(*(mat2->data) + i + 8);
+        avx_g = _mm256_loadu_pd(*(mat1->data) + i + 12);
+        avx_h = _mm256_loadu_pd(*(mat2->data) + i + 12);
         _mm256_storeu_pd(*(result->data) + i, _mm256_add_pd(avx_a, avx_b));
+        _mm256_storeu_pd(*(result->data) + i + 4, _mm256_add_pd(avx_c, avx_d));
+        _mm256_storeu_pd(*(result->data) + i + 8, _mm256_add_pd(avx_e, avx_f));
+        _mm256_storeu_pd(*(result->data) + i + 12, _mm256_add_pd(avx_g, avx_h));
     }
     // handling tails
     for (int i = paralleled_index; i < result->rows * result->cols; ++i) {

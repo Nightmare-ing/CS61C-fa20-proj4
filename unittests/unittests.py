@@ -26,19 +26,23 @@ class TestAdd(TestCase):
     def test_small_add(self):
         dp_mat1, nc_mat1 = rand_dp_nc_matrix(2, 2, seed=0)
         dp_mat2, nc_mat2 = rand_dp_nc_matrix(2, 2, seed=1)
-        is_correct, speed_up = compute([dp_mat1, dp_mat2], [nc_mat1, nc_mat2], "add")
-        self.assertTrue(is_correct)
-        print_speedup(speed_up)
+        print("")
+        for _ in range(10):
+            is_correct, speed_up = compute([dp_mat1, dp_mat2] * 10, [nc_mat1, nc_mat2] * 10, "add")
+            self.assertTrue(is_correct)
+            print_speedup(speed_up)
 
     def test_medium_add(self):
         dp_mat1, nc_mat1 = rand_dp_nc_matrix(100, 100, seed=0)
         dp_mat2, nc_mat2 = rand_dp_nc_matrix(100, 100, seed=1)
-        is_correct, speed_up = compute([dp_mat1, dp_mat2], [nc_mat1, nc_mat2], "add")
-        self.assertTrue(is_correct)
-        print_speedup(speed_up)
+        print("")
+        for _ in range(10):
+            is_correct, speed_up = compute([dp_mat1, dp_mat2] * 10, [nc_mat1, nc_mat2] * 10, "add")
+            self.assertTrue(is_correct)
+            print_speedup(speed_up)
 
         dp_mat1, nc_mat1 = dp_nc_matrix(100, 100, 1);
-        is_correct, speed_up = compute([dp_mat1, dp_mat1], [nc_mat1, nc_mat1], "add")
+        is_correct, speed_up = compute([dp_mat1, dp_mat1] * 10, [nc_mat1, nc_mat1] * 10, "add")
         self.assertTrue(is_correct)
         print("fill + add speed up: ")
         print_speedup(speed_up)
@@ -46,9 +50,11 @@ class TestAdd(TestCase):
     def test_large_add(self):
         dp_mat1, nc_mat1 = rand_dp_nc_matrix(20000, 20000, seed=0)
         dp_mat2, nc_mat2 = rand_dp_nc_matrix(20000, 20000, seed=1)
-        is_correct, speed_up = compute([dp_mat1, dp_mat2], [nc_mat1, nc_mat2], "add")
-        self.assertTrue(is_correct)
-        print_speedup(speed_up)
+        print("")
+        for _ in range(10):
+            is_correct, speed_up = compute([dp_mat1, dp_mat2] * 10, [nc_mat1, nc_mat2] * 10, "add")
+            self.assertTrue(is_correct)
+            print_speedup(speed_up)
 
 
 class TestSub(TestCase):
