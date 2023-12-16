@@ -106,20 +106,28 @@ class TestAbs(TestCase):
         cmp_dp_nc_matrix(nc.Matrix([[1, -2, 3], [-4, 5, -6]]), nc_mat1)
 
     def test_small_abs(self):
-        pass
-        # TODO: YOUR CODE HERE
         dp_mat, nc_mat = rand_dp_nc_matrix(2, 2, seed=0)
-        is_correct, speed_up = compute([dp_mat], [nc_mat], "abs")
-        self.assertTrue(is_correct)
-        print_speedup(speed_up)
+        print("")
+        for _ in range(10):
+            is_correct, speed_up = compute([dp_mat], [nc_mat], "abs")
+            self.assertTrue(is_correct)
+            print_speedup(speed_up)
 
     def test_medium_abs(self):
-        # TODO: YOUR CODE HERE
-        pass
+        dp_mat, nc_mat = rand_dp_nc_matrix(2000, 2000, seed=0)
+        print("")
+        for _ in range(10):
+            is_correct, speed_up = compute([dp_mat], [nc_mat], "abs")
+            self.assertTrue(is_correct)
+            print_speedup(speed_up)
 
     def test_large_abs(self):
-        # TODO: YOUR CODE HERE
-        pass
+        dp_mat, nc_mat = rand_dp_nc_matrix(20000, 20000, seed=0)
+        print("")
+        for _ in range(10):
+            is_correct, speed_up = compute([dp_mat], [nc_mat], "abs")
+            self.assertTrue(is_correct)
+            print_speedup(speed_up)
 
 
 class TestNeg(TestCase):

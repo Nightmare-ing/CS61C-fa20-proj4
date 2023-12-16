@@ -339,10 +339,20 @@ int abs_matrix(matrix *result, matrix *mat) {
     if (result->rows != mat->rows || result->cols != mat->cols) {
         return -2;
     }
-    for (int i = 0; i < result->rows; ++i) {
-        for (int j = 0; j < result->cols; ++j) {
-            double temp;
-            result->data[i][j] = ((temp = mat->data[i][j]) < 0) ? -temp : temp;
+    u_int64_t mask_int = ~((u_int64_t) 1 << 63);
+    double mask_double;
+    memcpy(&mask_double, &mask_int, sizeof(mask_double));
+    __m256d mask_avx = _mm256_set1_pd(mask_double);
+    __m256d data;
+    int paralleled_index = mat->rows * mat->cols / 4 * 4;
+    for (int i = 0; i < paralleled_index; i += 4) {
+        data = _mm256_loadu_pd(*(mat->data) + i);
+        _mm256_storeu_pd(*(result->data) + i, _mm256_and_pd(mask_avx, data));
+    }
+    // handling tail
+    for (int i = paralleled_index; i < mat->rows * mat->cols; ++i) {
+        if (*(*(mat->data) + i) < 0) {
+            *(*(result->data) + i) = - *(*(mat->data) + i);
         }
     }
     return 0;
