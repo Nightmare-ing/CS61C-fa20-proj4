@@ -180,10 +180,14 @@ void set(matrix *mat, int row, int col, double val) {
  * Set all entries in mat to val
  */
 void fill_matrix(matrix *mat, double val) {
-    for (int i = 0; i < mat->rows; ++i) {
-        for (int j = 0; j < mat->cols; ++j) {
-            mat->data[i][j] = val;
-        }
+    int paralleled_index = mat->rows * mat->cols / 4 * 4;
+    __m256d avx_unit = _mm256_set1_pd(val);
+    for (int i = 0; i < paralleled_index; i += 4) {
+        _mm256_storeu_pd(*(mat->data) + i, avx_unit);
+    }
+    // handling tail
+    for (int i = paralleled_index; i < mat->rows * mat->cols; ++i) {
+        *(*(mat->data) + i) = val;
     }
 }
 
