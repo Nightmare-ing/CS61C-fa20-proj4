@@ -343,17 +343,22 @@ int abs_matrix(matrix *result, matrix *mat) {
     double mask_double;
     memcpy(&mask_double, &mask_int, sizeof(mask_double));
     __m256d mask_avx = _mm256_set1_pd(mask_double);
-    __m256d data;
-    int paralleled_index = mat->rows * mat->cols / 4 * 4;
-    for (int i = 0; i < paralleled_index; i += 4) {
-        data = _mm256_loadu_pd(*(mat->data) + i);
-        _mm256_storeu_pd(*(result->data) + i, _mm256_and_pd(mask_avx, data));
+    __m256d data0, data1, data2, data3;
+    int paralleled_index = mat->rows * mat->cols / 16 * 16;
+    for (int i = 0; i < paralleled_index; i += 16) {
+        data0 = _mm256_loadu_pd(*(mat->data) + i);
+        data1 = _mm256_loadu_pd(*(mat->data) + i + 4);
+        data2 = _mm256_loadu_pd(*(mat->data) + i + 8);
+        data3 = _mm256_loadu_pd(*(mat->data) + i + 12);
+        _mm256_storeu_pd(*(result->data) + i, _mm256_and_pd(mask_avx, data0));
+        _mm256_storeu_pd(*(result->data) + i + 4, _mm256_and_pd(mask_avx, data1));
+        _mm256_storeu_pd(*(result->data) + i + 8, _mm256_and_pd(mask_avx, data2));
+        _mm256_storeu_pd(*(result->data) + i + 12, _mm256_and_pd(mask_avx, data3));
     }
     // handling tail
     for (int i = paralleled_index; i < mat->rows * mat->cols; ++i) {
-        if (*(*(mat->data) + i) < 0) {
-            *(*(result->data) + i) = - *(*(mat->data) + i);
-        }
+        double temp = *(*(mat->data) + i);
+        *(*(result->data) + i) = temp < 0 ? -temp : temp;
     }
     return 0;
 }
