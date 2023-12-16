@@ -227,10 +227,16 @@ int sub_matrix(matrix *result, matrix *mat1, matrix *mat2) {
     if (result->rows != mat1->rows || result->cols != mat1->cols) {
         return -3;
     }
-    for (int i = 0; i < result->rows; ++i) {
-        for (int j = 0; j < result->cols; ++j) {
-            result->data[i][j] = mat1->data[i][j] - mat2->data[i][j];
-        }
+    int paralleled_index = result->rows * result->cols / 4 * 4;
+    __m256d avx_a, avx_b;
+    for (int i = 0; i < paralleled_index; i += 4) {
+        avx_a = _mm256_loadu_pd(*(mat1->data) + i);
+        avx_b = _mm256_loadu_pd(*(mat2->data) + i);
+        _mm256_storeu_pd(*(result->data) + i, _mm256_sub_pd(avx_a, avx_b));
+    }
+    // handling tails
+    for (int i = paralleled_index; i < result->rows * result->cols; ++i) {
+        *(*(result->data) + i) = *(*(mat1->data) + i) - *(*(mat2->data) + i);
     }
     return 0;
 }
