@@ -264,9 +264,27 @@ int mul_matrix(matrix *result, matrix *mat1, matrix *mat2) {
     }
     matrix *temp_result = NULL;
     allocate_matrix(&temp_result, result->rows, result->cols);
+    __m256d left_data;
+    __m256d right_data0, temp_sum0, right_data1, temp_sum1, right_data2, temp_sum2, right_data3, temp_sum3;
     for (int i = 0; i < result->rows; ++i) {
         for (int k = 0; k < mat1->cols; ++k) {
-            for (int j = 0; j < result->cols; ++j) {
+            left_data = _mm256_set1_pd(mat1->data[i][k]);
+            for (int j = 0; j < result->cols / 16 * 16; j += 16) {
+                temp_sum0 = _mm256_loadu_pd(temp_result->data[i] + j);
+                right_data0 = _mm256_loadu_pd(mat2->data[k] + j);
+                temp_sum1 = _mm256_loadu_pd(temp_result->data[i] + j + 4);
+                right_data1 = _mm256_loadu_pd(mat2->data[k] + j + 4);
+                temp_sum2 = _mm256_loadu_pd(temp_result->data[i] + j + 8);
+                right_data2 = _mm256_loadu_pd(mat2->data[k] + j + 8);
+                temp_sum3 = _mm256_loadu_pd(temp_result->data[i] + j + 12);
+                right_data3 = _mm256_loadu_pd(mat2->data[k] + j + 12);
+                _mm256_storeu_pd(temp_result->data[i] + j, _mm256_fmadd_pd(left_data, right_data0, temp_sum0));
+                _mm256_storeu_pd(temp_result->data[i] + j + 4, _mm256_fmadd_pd(left_data, right_data1, temp_sum1));
+                _mm256_storeu_pd(temp_result->data[i] + j + 8, _mm256_fmadd_pd(left_data, right_data2, temp_sum2));
+                _mm256_storeu_pd(temp_result->data[i] + j + 12, _mm256_fmadd_pd(left_data, right_data3, temp_sum3));
+            }
+            // handling tail
+            for (int j = result->cols / 16 * 16; j < result->cols; ++j) {
                 temp_result->data[i][j] += mat1->data[i][k] * mat2->data[k][j];
             }
         }

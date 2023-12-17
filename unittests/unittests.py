@@ -176,21 +176,29 @@ class TestMul(TestCase):
             result = nc_mat1 * nc.Matrix([1, 2, 3])
 
     def test_small_mul(self):
-        pass
-        # TODO: YOUR CODE HERE
-        dp_mat1, nc_mat1 = rand_dp_nc_matrix(2, 2, seed=0)
-        dp_mat2, nc_mat2 = rand_dp_nc_matrix(2, 2, seed=1)
+        dp_mat1, nc_mat1 = dp_nc_matrix([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]])
+        dp_mat2, nc_mat2 = dp_nc_matrix([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [12, 14, 15, 16]])
         is_correct, speed_up = compute([dp_mat1, dp_mat2], [nc_mat1, nc_mat2], "mul")
         self.assertTrue(is_correct)
         print_speedup(speed_up)
 
     def test_medium_mul(self):
-        # TODO: YOUR CODE HERE
-        pass
+        dp_mat1, nc_mat1 = rand_dp_nc_matrix(1000, 1000, seed=0)
+        dp_mat2, nc_mat2 = rand_dp_nc_matrix(1000, 1000, seed=1)
+        print("")
+        for _ in range(10):
+            is_correct, speed_up = compute([dp_mat1, dp_mat2] * 10, [nc_mat1, nc_mat2] * 10, "mul")
+            self.assertTrue(is_correct)
+            print_speedup(speed_up)
 
     def test_large_mul(self):
-        # TODO: YOUR CODE HERE
-        pass
+        dp_mat1, nc_mat1 = rand_dp_nc_matrix(20000, 20000, seed=0)
+        dp_mat2, nc_mat2 = rand_dp_nc_matrix(20000, 20000, seed=1)
+        print("")
+        for _ in range(10):
+            is_correct, speed_up = compute([dp_mat1, dp_mat2] * 10, [nc_mat1, nc_mat2] * 10, "mul")
+            self.assertTrue(is_correct)
+            print_speedup(speed_up)
 
 
 class TestPow(TestCase):
