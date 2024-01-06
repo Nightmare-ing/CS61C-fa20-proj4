@@ -40,16 +40,31 @@ double rand_double(double low, double high) {
  */
 void rand_matrix(matrix *result, unsigned int seed, double low, double high) {
     srand(seed);
-    int paralleled_index = result->rows * result->cols / 4 * 4;
-    __m256d rand_avx;
-    for (int i = 0; i < paralleled_index; i += 4) {
-        rand_avx = _mm256_set_pd(rand_double(low, high), rand_double(low, high), rand_double(low, high),
-                                         rand_double(low, high));
-        _mm256_storeu_pd(*(result->data) + i, rand_avx);
+    int size = result->rows * result->cols;
+#pragma omp parallel default(none) shared(result, low, high, size)
+    {
+        int thread_num = omp_get_thread_num();
+        int block_size = size / omp_get_num_threads();
+        int paralleled_index = block_size / 4 * 4 + thread_num * block_size;
+        int index_upper_limit = (thread_num + 1) * block_size;
+        for (int i = thread_num * block_size; i < index_upper_limit; i += 4) {
+            __m256d rand_avx = _mm256_set_pd(rand_double(low, high), rand_double(low, high), rand_double(low, high),
+                                     rand_double(low, high));
+            _mm256_storeu_pd(*(result->data) + i, rand_avx);
+        }
+        // handling tail
+        for (int i = paralleled_index; i < index_upper_limit; ++i) {
+            *(*(result->data) + i) = rand_double(low, high);
+        }
     }
     // handling tail
-    for (int i = paralleled_index; i < result->rows * result->cols; ++i) {
-        *(*(result->data) + i) = rand_double(low, high);
+#pragma omp parallel default(none) shared(size, result, low, high)
+    {
+        int rest_start_index = size / omp_get_num_threads() * omp_get_num_threads();
+        omp_set_num_threads(size - rest_start_index);
+        int index = omp_get_thread_num() + rest_start_index;
+#pragma omp critical
+        *(*(result->data) + index) = rand_double(low, high);
     }
 }
 
