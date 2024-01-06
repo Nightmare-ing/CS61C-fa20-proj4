@@ -90,6 +90,7 @@ int allocate_matrix(matrix **mat, int rows, int cols) {
         return -1;
     }
 
+#pragma omp parallel for default(none) shared(rows, mat, data_array, cols)
     for (int i = 0; i < rows; ++i) {
         (*mat)->data[i] = data_array + i * cols;
     }
