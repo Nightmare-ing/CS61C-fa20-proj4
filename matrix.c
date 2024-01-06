@@ -124,6 +124,7 @@ int allocate_matrix_ref(matrix **mat, matrix *from, int row_offset, int col_offs
     (*mat)->cols = cols;
     (*mat)->data = from->data + row_offset;
 
+#pragma omp parallel for default(none) shared(rows, mat, from, row_offset, col_offset)
     for (int i = 0; i < rows; ++i) {
         (*mat)->data[i] = from->data[i+row_offset] + col_offset;
     }
